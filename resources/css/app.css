@@ -1,0 +1,6 @@
+@import 'tailwindcss';
+@layer components {
+    .sidebars {
+        background-color: #152259;
+    }
+}
