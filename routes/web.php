@@ -1,49 +1,44 @@
 <?php
-// routes/web.php
 
-use App\Http\Controllers\ClassroomController;
-use App\Http\Controllers\ProfileController; // Example if using Breeze for profile
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\ClassroomController;
+use App\Http\Controllers\SchoolController;
+use App\Models\School;
 use Inertia\Inertia;
 
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-*/
-
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-    ]);
-});
-
+    return Inertia::render('WelcomePage');
+})->name('welcome');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/home', function () {
+        $user = Auth::user();
+        $school = null;
+        if ($user->role === 'teacher') {
+            $school = School::where('principal_id', $user->id)->first();
+        } elseif ($user->role === 'principal') {
+            $school = School::where('principal_id', $user->id)->first();
+        }
+        return Inertia::render('home', [
+            'school' => $school
+        ]);
+    })->name('home');
 
-    // Classroom Index/List Page
-    Route::get('/classrooms', [ClassroomController::class, 'index'])->name('classrooms.index'); 
+    // Buat sekolah (hanya untuk principal)
+    Route::get('/schools/create', [SchoolController::class, 'create'])
+        ->name('schools.create')
+        ->middleware('role:principal');
+    Route::post('/schools', [SchoolController::class, 'store'])
+        ->name('schools.store')
+        ->middleware('role:principal');
 
-    // Create Classroom
+    // Halaman Kelas untuk Guru
+    Route::get('/students-classes', [ClassroomController::class, 'index'])->name('students.classes');
     Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
-
-    // Manage a specific Classroom
-    Route::get('/classrooms/{id}/manage', [ClassroomController::class, 'manage'])->name('classrooms.manage');
-
-    // Add a Co-Teacher to a Classroom (Principals)
-    // Changed route parameter from {classroom} to {class_instance_id} for explicit binding
-    Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
-        ->name('classrooms.add-teacher')
-        ->where('class_instance_id', '[0-9]+'); // Ensure it's a number
-
+    Route::get('/classrooms/{id}/manage', [ClassroomController::class, 'manage'])
+        ->name('classrooms.manage');
 });
 
-// Ensure auth routes are defined (e.g., require __DIR__.'/auth.php'; for Breeze)
-if (!app()->routesAreCached() && file_exists(base_path('routes/auth.php'))) {
-    require __DIR__.'/auth.php';
-}
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';
