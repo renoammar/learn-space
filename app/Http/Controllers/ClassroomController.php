@@ -36,7 +36,7 @@ class ClassroomController extends Controller
         return Inertia::render('StudentClassesPage', ['classrooms' => $classrooms]);
     }
 
-    public function store(Request $request)
+      public function store(Request $request)
     {
         $request->validate(['name' => 'required|string|max:255']);
         /** @var \App\Models\User $user */
@@ -52,8 +52,10 @@ class ClassroomController extends Controller
         if ($user->role === 'teacher' || $user->role === 'principal') {
             $classroom->teachers()->attach($user->id);
         }
-        return redirect()->route('classrooms.index')->with('success_message', 'Classroom "' . $classroom->name . '" created successfully.');
+        // Change 'classrooms.index' to 'students.classes'
+        return redirect()->route('students.classes')->with('success_message', 'Classroom "' . $classroom->name . '" created successfully.');
     }
+
 
     public function manage(Request $request, $id)
     {
@@ -63,69 +65,54 @@ class ClassroomController extends Controller
 
     // Changed parameter from Classroom $classroom to Classroom $class_instance_id
     // Laravel will bind the {class_instance_id} route segment to this $class_instance_id variable as a Classroom model
-    public function addTeacher(Request $request, Classroom $class_instance_id)
-    {
-        $logChannel = 'stderr';
-        Log::channel($logChannel)->info('--- Add Teacher Attempt (Explicit Binding) ---');
-        Log::channel($logChannel)->info('Request URL: ' . $request->fullUrl());
-        Log::channel($logChannel)->info('Route Name: ' . ($request->route() ? $request->route()->getName() : 'N/A'));
-        Log::channel($logChannel)->info('Route Parameters (resolved): ', $request->route() ? $request->route()->parameters() : ['N/A']);
-        Log::channel($logChannel)->info('Value of route parameter {class_instance_id} from $request->route("class_instance_id"): ' . ($request->route('class_instance_id') ?? 'NULL'));
-        
-        if ($class_instance_id) {
-            Log::channel($logChannel)->info('Injected Classroom object type: ' . get_class($class_instance_id));
-            Log::channel($logChannel)->info('Injected Classroom ID (from $class_instance_id->id): ' . ($class_instance_id->id ?: 'NULL'));
-            Log::channel($logChannel)->info('Injected Classroom exists (from $class_instance_id->exists): ' . ($class_instance_id->exists ? 'true' : 'false'));
-        } else {
-            Log::channel($logChannel)->error('CRITICAL: $class_instance_id parameter is NULL.');
-            return back()->withInput()->with('error_message', 'Critical server error (classroom injection failed).');
-        }
+public function addTeacher(Request $request, Classroom $class_instance_id)
+{
+    $logChannel = 'stderr';
+    Log::channel($logChannel)->info('--- Add Teacher Attempt (Explicit Binding) ---', $request->route()->parameters());
 
-        /** @var \App\Models\User $currentUser */
-        $currentUser = Auth::user();
-        if (!$currentUser) {
-             Log::channel($logChannel)->error('CRITICAL: User not authenticated.');
-             return response()->json(['message' => 'Unauthenticated.'], 401);
-        }
+    /** @var \App\Models\User $currentUser */
+    $currentUser = Auth::user();
 
-        // Use $class_instance_id instead of $classroom
-        if (!$class_instance_id->exists) {
-            Log::channel($logChannel)->error('CRITICAL: Injected Classroom model does not exist.');
-            $resolvedId = $request->route('class_instance_id');
-            return back()->withInput()
-                         ->withErrors(['teacher_email' => 'Target classroom (ID from URL: ' . ($resolvedId ?: 'unknown') . ') could not be resolved.'])
-                         ->with('error_message', 'Failed to add co-teacher. Classroom not found or ID is invalid.');
-        }
-
-        if ($currentUser->role !== 'principal') {
-            Log::channel($logChannel)->warning('AuthZ Fail: Not principal.', ['uid' => $currentUser->id, 'role' => $currentUser->role]);
-            return back()->withInput()->withErrors(['teacher_email' => 'Not authorized.'])->with('error_message', 'Authorization failed.');
-        }
-
-        if ($currentUser->school_id && $class_instance_id->school_id !== $currentUser->school_id) {
-             Log::channel($logChannel)->warning('AuthZ Fail: School mismatch.', ['uid' => $currentUser->id, 'uSchool' => $currentUser->school_id, 'cSchool' => $class_instance_id->school_id]);
-             return back()->withInput()->withErrors(['teacher_email' => 'Cannot manage classrooms outside your school.'])->with('error_message', 'Access denied.');
-        }
-
-        $validated = $request->validate([
-            'teacher_email' => ['required', 'email', Rule::exists('users', 'email')->where('role', 'teacher')],
-        ]);
-        $teacherToAdd = User::where('email', $validated['teacher_email'])->where('role', 'teacher')->firstOrFail();
-
-        if ($class_instance_id->teachers()->where('users.id', $teacherToAdd->id)->exists()) {
-            Log::channel($logChannel)->info('Teacher already in class.', ['tid' => $teacherToAdd->id, 'cid' => $class_instance_id->id]);
-            return back()->withInput()->with('error_message', 'This teacher is already in the classroom.');
-        }
-
-        if ($teacherToAdd->school_id && $class_instance_id->school_id !== $teacherToAdd->school_id) {
-           Log::channel($logChannel)->warning('Teacher school mismatch.', ['tid' => $teacherToAdd->id, 'tSchool' => $teacherToAdd->school_id, 'cSchool' => $class_instance_id->school_id]);
-           return back()->withInput()->withErrors(['teacher_email' => 'Teacher not in same school.'])->with('error_message', 'Teacher school mismatch.');
-        }
-
-        $class_instance_id->teachers()->attach($teacherToAdd->id);
-        Log::channel($logChannel)->info('Teacher attached.', ['tid' => $teacherToAdd->id, 'cid' => $class_instance_id->id]);
-
-        return redirect()->route('classrooms.manage', ['id' => $class_instance_id->id])
-                         ->with('success_message', $teacherToAdd->name . ' added as co-teacher.');
+    // Authorization: Ensure the current user is a principal of the same school as the classroom
+    if ($currentUser->role !== 'principal') {
+        return back()->with('error_message', 'Only principals can add teachers.');
     }
+    
+    // Eager load the school relationship for the current user to get their school_id
+    $principalSchoolId = $currentUser->school()->value('id');
+    if ($class_instance_id->school_id !== $principalSchoolId) {
+        return back()->with('error_message', 'You can only manage classrooms within your own school.');
+    }
+
+    // Validate request
+    $validated = $request->validate([
+        'teacher_email' => ['required', 'email', Rule::exists('users', 'email')->where('role', 'teacher')],
+    ]);
+
+    $teacherToAdd = User::where('email', $validated['teacher_email'])->where('role', 'teacher')->firstOrFail();
+
+    // Check if teacher is already in the classroom
+    if ($class_instance_id->teachers()->where('users.id', $teacherToAdd->id)->exists()) {
+        return back()->with('error_message', 'This teacher is already in the classroom.');
+    }
+    
+    // If teacher doesn't have a school, assign them to this school.
+    if (is_null($teacherToAdd->school_id)) {
+        $teacherToAdd->school_id = $class_instance_id->school_id;
+        $teacherToAdd->save();
+        Log::channel($logChannel)->info('Assigned school to new teacher.', ['tid' => $teacherToAdd->id, 'school_id' => $class_instance_id->school_id]);
+    } 
+    // If teacher already has a school, ensure it matches the classroom's school.
+    elseif ($teacherToAdd->school_id !== $class_instance_id->school_id) {
+        return back()->withErrors(['teacher_email' => 'This teacher belongs to a different school.'])
+                     ->with('error_message', 'Cannot add a teacher from another school.');
+    }
+    
+    // Attach the teacher to the classroom
+    $class_instance_id->teachers()->attach($teacherToAdd->id);
+    Log::channel($logChannel)->info('Teacher attached successfully.', ['tid' => $teacherToAdd->id, 'cid' => $class_instance_id->id]);
+
+    return redirect()->route('classrooms.manage', ['id' => $class_instance_id->id])
+                     ->with('success_message', $teacherToAdd->name . ' has been successfully added as a co-teacher.');
+}
 }

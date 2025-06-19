@@ -1,3 +1,4 @@
+// File: vite.config.ts
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
@@ -7,7 +8,12 @@ import { defineConfig } from 'vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            // Include all page components in the input array
+            input: [
+                'resources/css/app.css',
+                'resources/js/app.tsx',
+                'resources/js/pages/**/*.tsx', // <-- Add this line
+            ],
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),

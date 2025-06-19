@@ -24,7 +24,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'school' => $school
         ]);
     })->name('home');
-
+     // --- ADD THIS ROUTE FOR ADDING A TEACHER TO A SCHOOL ---
+     Route::get('/add-teacher-toschool',function () {
+        return Inertia::render('AddTeacherToSchool');
+    })->name('add.teacher.toschool');
+    Route::post('/schools/add-teacher', [SchoolController::class, 'addTeacher'])
+        ->name('schools.addTeacher')
+        ->middleware('role:principal');
     // Buat sekolah (hanya untuk principal)
     Route::get('/schools/create', [SchoolController::class, 'create'])
         ->name('schools.create')
@@ -38,6 +44,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/classrooms', [ClassroomController::class, 'store'])->name('classrooms.store');
     Route::get('/classrooms/{id}/manage', [ClassroomController::class, 'manage'])
         ->name('classrooms.manage');
+    Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
+    ->name('classrooms.add-teacher');
 });
 
 require __DIR__.'/settings.php';
