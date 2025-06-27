@@ -1,6 +1,5 @@
 <?php
 
-// User.php
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -32,25 +31,22 @@ class User extends Authenticatable
         ];
     }
 
-    // Relationship for school (principal owns school)
+    // A user belongs to a school
     public function school()
     {
-        return $this->hasOne(School::class, 'principal_id');
+        return $this->belongsTo(School::class);
     }
 
-    // Direct relationship for classrooms where user is the primary teacher
     public function classrooms()
     {
         return $this->belongsToMany(Classroom::class, 'classroom_teacher', 'teacher_id', 'classroom_id');
     }
 
-    // Many-to-many relationship for additional teachers assigned to classrooms
     public function assignedClassrooms()
     {
         return $this->belongsToMany(Classroom::class, 'classroom_teacher', 'teacher_id', 'classroom_id');
     }
 
-    // Many-to-many relationship for students in classrooms
     public function studentClassrooms()
     {
         return $this->belongsToMany(Classroom::class, 'classroom_student', 'student_id', 'classroom_id');

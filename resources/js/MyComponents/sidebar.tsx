@@ -1,3 +1,4 @@
+// File: resources/js/MyComponents/sidebar.tsx
 import { usePage } from '@inertiajs/react';
 import { FileText, GraduationCap, Home, Settings, Users } from 'lucide-react';
 import { FC, useState } from 'react';
@@ -50,6 +51,13 @@ const Sidebars: FC = () => {
                         icon={<GraduationCap size={16} />}
                         text="Students / classes"
                         isActive={activeItem === 'Students / classes'}
+                    />
+                    <SidebarItem
+                        href={route('school.members')}
+                        onClick={handleItemClick}
+                        icon={<Users size={16} />}
+                        text="School members"
+                        isActive={activeItem === 'School members'}
                     />
                     {/* <SidebarItem onClick={handleItemClick} icon={<Banknote size={16} />} text="Billing" isActive={activeItem === 'Billing'} /> */}
                     <SidebarItem

@@ -1,5 +1,5 @@
 <?php
-// School.php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -19,5 +19,13 @@ class School extends Model
     public function classrooms()
     {
         return $this->hasMany(Classroom::class);
+    }
+    
+    /**
+     * Get all members (users) belonging to the school.
+     */
+    public function members()
+    {
+        return $this->hasMany(User::class);
     }
 }

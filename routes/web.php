@@ -15,10 +15,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home', function () {
         $user = Auth::user();
         $school = null;
-        if ($user->role === 'teacher') {
-            $school = School::where('principal_id', $user->id)->first();
-        } elseif ($user->role === 'principal') {
-            $school = School::where('principal_id', $user->id)->first();
+        if ($user->role === 'teacher' || $user->role === 'principal') {
+            // A principal's school is where they are the principal_id
+            // A teacher's school is determined by their school_id
+            if ($user->role === 'principal') {
+                 $school = School::where('principal_id', $user->id)->first();
+            } else {
+                $school = $user->school;
+            }
         }
         return Inertia::render('home', [
             'school' => $school
@@ -47,6 +51,9 @@ Route::get('/add-teacher-toschool',function () {
         ->name('classrooms.manage');
     Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
     ->name('classrooms.add-teacher');
+
+    // Route for displaying school members
+    Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
 });
 
 require __DIR__.'/settings.php';

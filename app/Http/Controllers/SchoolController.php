@@ -103,4 +103,33 @@ class SchoolController extends BaseController
 
         return redirect()->route('home')->with('success', 'Guru berhasil ditambahkan ke sekolah Anda.');
     }
+
+    /**
+     * Display a list of all members in the school.
+     */
+    public function showMembers(): Response
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        // Only principals and teachers can see the member list
+        if ($user->role !== 'principal' && $user->role !== 'teacher') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $school = $user->school;
+
+        if (!$school) {
+            // This will render an error page if the user is not associated with a school.
+            return Inertia::render('Error', ['message' => 'You are not associated with any school.']);
+        }
+
+        // Fetch all members of the school, ordered by role and then by name.
+        $members = $school->members()->orderBy('role', 'desc')->orderBy('name')->get();
+
+        return Inertia::render('School/Members', [
+            'school' => $school,
+            'members' => $members,
+        ]);
+    }
 }
