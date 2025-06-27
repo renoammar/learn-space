@@ -16,8 +16,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $user = Auth::user();
         $school = null;
         if ($user->role === 'teacher' || $user->role === 'principal') {
-            // A principal's school is where they are the principal_id
-            // A teacher's school is determined by their school_id
             if ($user->role === 'principal') {
                  $school = School::where('principal_id', $user->id)->first();
             } else {
@@ -28,15 +26,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'school' => $school
         ]);
     })->name('home');
-     // --- ADD THIS ROUTE FOR ADDING A TEACHER TO A SCHOOL ---
-   // File: routes/web.php
-Route::get('/add-teacher-toschool',function () {
-    return Inertia::render('addTeacherToSchool'); // Renders 'AddTeacherToSchool'
-})->name('add.teacher.toschool');
+    
+    Route::get('/add-teacher-toschool',function () {
+        return Inertia::render('addTeacherToSchool');
+    })->name('add.teacher.toschool');
+
     Route::post('/schools/add-teacher', [SchoolController::class, 'addTeacher'])
         ->name('schools.addTeacher')
         ->middleware('role:principal');
-    // Buat sekolah (hanya untuk principal)
+    
     Route::get('/schools/create', [SchoolController::class, 'create'])
         ->name('schools.create')
         ->middleware('role:principal');
@@ -50,9 +48,9 @@ Route::get('/add-teacher-toschool',function () {
     Route::get('/classrooms/{id}/manage', [ClassroomController::class, 'manage'])
         ->name('classrooms.manage');
     Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
-    ->name('classrooms.add-teacher');
+        ->name('classrooms.add-teacher');
 
-    // Route for displaying school members
+    // --- FIX: ADD THE MISSING SCHOOL MEMBERS ROUTE ---
     Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
 });
 

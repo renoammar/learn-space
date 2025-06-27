@@ -103,6 +103,48 @@ class SchoolController extends BaseController
 
         return redirect()->route('home')->with('success', 'Guru berhasil ditambahkan ke sekolah Anda.');
     }
+    public function addStudent(Request $request): RedirectResponse
+    {
+        /** @var \App\Models\User $principal */
+        $principal = Auth::user();
+
+        // Authorization: Check role and ensure principal has a school
+        if ($principal->role !== 'principal') {
+            abort(403, 'Only principals can add students.');
+        }
+
+        $school = $principal->school;
+        if (!$school) {
+            return back()->with('error', 'You must have a school to add a student.');
+        }
+
+        // Validate that the email exists for a student who isn't already in a school
+        $request->validate([
+            'email' => [
+                'required',
+                'email',
+                Rule::exists('users', 'email')->where(function ($query) {
+                    $query->where('role', 'student')->whereNull('school_id');
+                }),
+            ],
+        ], [
+            'email.exists' => 'This email is not registered as a student or the student is already enrolled in another school.',
+        ]);
+
+        // Find the student. Validation ensures they exist and are eligible.
+        $student = User::where('email', $request->email)->first();
+        
+        // This check is good for safety, though validation should prevent this.
+        if (!$student) {
+            return back()->with('error', 'Student not found or already enrolled in another school.');
+        }
+
+        // Update student's school_id
+        $student->school_id = $school->id;
+        $student->save();
+
+        return redirect()->route('add.student.toschool')->with('success', 'Student successfully added to your school.');
+    }
 
     /**
      * Display a list of all members in the school.

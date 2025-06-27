@@ -1,8 +1,10 @@
 // File: resources/js/MyComponents/sidebar.tsx
+
 import { usePage } from '@inertiajs/react';
 import { FileText, GraduationCap, Home, Settings, Users } from 'lucide-react';
 import { FC, useState } from 'react';
 import SidebarItem from './sidebarItem';
+
 type User = {
     id: number;
     name: string;
@@ -28,6 +30,7 @@ const Sidebars: FC = () => {
                 {/* Logo Section */}
                 <div className="mb-10 flex flex-col items-start">
                     <div className="flex flex-col items-start justify-center text-2xl font-bold text-white">
+                        {/* FIX: Replaced invalid character with a standard emoji */}
                         <span className="text-4xl drop-shadow-[0_1px_2px_rgba(255,255,255,0.5)]">🎓</span>
                         <span>LearnSpace</span>
                     </div>
@@ -52,6 +55,7 @@ const Sidebars: FC = () => {
                         text="Students / classes"
                         isActive={activeItem === 'Students / classes'}
                     />
+                    {/* ADDITION: Added the School Members link */}
                     <SidebarItem
                         href={route('school.members')}
                         onClick={handleItemClick}
@@ -59,7 +63,6 @@ const Sidebars: FC = () => {
                         text="School members"
                         isActive={activeItem === 'School members'}
                     />
-                    {/* <SidebarItem onClick={handleItemClick} icon={<Banknote size={16} />} text="Billing" isActive={activeItem === 'Billing'} /> */}
                     <SidebarItem
                         onClick={handleItemClick}
                         icon={<Settings size={16} />}
@@ -73,7 +76,6 @@ const Sidebars: FC = () => {
             {/* User Section */}
             <div className="mt-6 rounded-xl bg-white/10 p-3 text-white shadow-inner">
                 <div className="flex items-center space-x-3">
-                    {/* User Avatar Circle with Initial */}
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-red-600 text-lg font-bold uppercase shadow-md">
                         {user?.name?.[0] || 'U'}
                     </div>

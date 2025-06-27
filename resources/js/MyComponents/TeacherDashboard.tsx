@@ -1,6 +1,6 @@
 // File: resources/js/MyComponents/TeacherDashboard.tsx
 
-import { Link, useForm } from '@inertiajs/react'; // <-- Import useForm
+import { Link } from '@inertiajs/react';
 import React from 'react';
 
 interface School {
@@ -20,18 +20,6 @@ interface Props {
 }
 
 const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
-    // Add useForm for the add teacher form
-    const { data, setData, post, processing, errors, recentlySuccessful, reset } = useForm({
-        email: '',
-    });
-
-    const handleAddTeacher = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(route('schools.addTeacher'), {
-            onSuccess: () => reset('email'), // Clear the form on success
-        });
-    };
-
     return (
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="mx-auto max-w-4xl rounded-xl bg-white p-6 shadow">
@@ -40,28 +28,26 @@ const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
 
                 {!school ? (
                     <div>
-                        <p className="mb-4 text-red-500">Anda belum memiliki sekolah.</p>
+                        <p className="mb-4 text-red-500">You do not have a school yet.</p>
                         <Link href={route('schools.create')} className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-                            Buat Sekolah
+                            Create School
                         </Link>
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {/* --- START: UPDATED SECTION --- */}
-                        <Link href={route('add.teacher.toschool')}>
-                            <div className="rounded-lg border bg-gray-50 p-4">
-                                <h2 className="mb-2 text-lg font-semibold">Add Teacher to School</h2>
-                            </div>
+                        <Link href={route('add.teacher.toschool')} className="block rounded-lg border bg-gray-50 p-4 transition hover:bg-gray-100">
+                            <h2 className="mb-1 text-lg font-semibold">Add Teacher to School</h2>
+                            <p className="text-sm text-gray-600">Invite registered teachers to join your school staff.</p>
                         </Link>
-                        {/* --- END: UPDATED SECTION --- */}
+
+                        <Link href={route('add.student.toschool')} className="block rounded-lg border bg-gray-50 p-4 transition hover:bg-gray-100">
+                            <h2 className="mb-1 text-lg font-semibold">Add Student to School</h2>
+                            <p className="text-sm text-gray-600">Enroll registered students into your school.</p>
+                        </Link>
 
                         <div className="rounded bg-gray-100 p-4">
-                            <h2 className="mb-1 text-lg font-semibold">Add classes</h2>
-                            <p className="text-sm text-gray-600">Placeholder untuk membuat kelas dan menambahkan materi pembelajaran.</p>
-                        </div>
-                        <div className="rounded bg-gray-100 p-4">
-                            <h2 className="mb-1 text-lg font-semibold">Add students</h2>
-                            <p className="text-sm text-gray-600">Placeholder untuk menambahkan murid ke dalam kelas.</p>
+                            <h2 className="mb-1 text-lg font-semibold">Manage Classes</h2>
+                            <p className="text-sm text-gray-600">Create new classes and manage existing ones.</p>
                         </div>
                     </div>
                 )}
