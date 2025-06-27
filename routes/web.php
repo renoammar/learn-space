@@ -25,9 +25,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ]);
     })->name('home');
      // --- ADD THIS ROUTE FOR ADDING A TEACHER TO A SCHOOL ---
-     Route::get('/add-teacher-toschool',function () {
-        return Inertia::render('AddTeacherToSchool');
-    })->name('add.teacher.toschool');
+   // File: routes/web.php
+Route::get('/add-teacher-toschool',function () {
+    return Inertia::render('addTeacherToSchool'); // Renders 'AddTeacherToSchool'
+})->name('add.teacher.toschool');
     Route::post('/schools/add-teacher', [SchoolController::class, 'addTeacher'])
         ->name('schools.addTeacher')
         ->middleware('role:principal');

@@ -42,7 +42,7 @@ class SchoolController extends BaseController
 
         // Use the relationship to find or create the school
         // This is cleaner than a separate query
-        $school = $principal->managedSchool()->updateOrCreate(
+        $school = $principal->school()->updateOrCreate(
             ['principal_id' => $principal->id], // Conditions to find the school
             ['name' => $request->name]          // Attributes to update or create with
         );
