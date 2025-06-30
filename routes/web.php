@@ -35,6 +35,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('schools.addTeacher')
         ->middleware('role:principal');
     
+    // START OF FIX
+    Route::get('/add-student-toschool', function () {
+        return Inertia::render('addStudentToSchool');
+    })->name('add.student.toschool');
+
+    Route::post('/schools/add-student', [SchoolController::class, 'addStudent'])
+        ->name('schools.addStudent')
+        ->middleware('role:principal');
+    // END OF FIX
+
     Route::get('/schools/create', [SchoolController::class, 'create'])
         ->name('schools.create')
         ->middleware('role:principal');
