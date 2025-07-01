@@ -55,13 +55,68 @@ class ClassroomController extends Controller
         // Change 'classrooms.index' to 'students.classes'
         return redirect()->route('students.classes')->with('success_message', 'Classroom "' . $classroom->name . '" created successfully.');
     }
-
-
-    public function manage(Request $request, $id)
-    {
-        $classroom = Classroom::with(['teachers', 'students', 'assignments.user', 'school'])->findOrFail($id);
-        return Inertia::render('ClassroomManagePage', ['classroom' => $classroom]);
+    public function enrollStudent(Request $request, Classroom $classroom)
+{
+    $user = Auth::user();
+    if ($user->role !== 'teacher' && $user->role !== 'principal') {
+        abort(403);
     }
+    if ($user->school_id !== $classroom->school_id) {
+        abort(403, 'You can only manage students within your own school.');
+    }
+
+    $validated = $request->validate([
+        'student_email' => ['required', 'email', Rule::exists('users', 'email')->where(function ($query) use ($classroom) {
+            $query->where('role', 'student')->where('school_id', $classroom->school_id);
+        })],
+    ], [
+        'student_email.exists' => 'No student with this email was found in your school, or they are not assigned to a school.',
+    ]);
+
+    $student = User::where('email', $validated['student_email'])->firstOrFail();
+
+    if ($classroom->students()->where('users.id', $student->id)->exists()) {
+        return back()->with('error_message', 'This student is already enrolled.');
+    }
+
+    $classroom->students()->attach($student->id);
+
+    return redirect()->route('classrooms.manage', $classroom->id)->with('success_message', 'Student successfully enrolled.');
+}
+
+public function removeStudent(Request $request, Classroom $classroom, User $student)
+{
+    $user = Auth::user();
+    if ($user->role !== 'teacher' && $user->role !== 'principal') {
+        abort(403);
+    }
+    if ($user->school_id !== $classroom->school_id) {
+        abort(403, 'You can only manage students within your own school.');
+    }
+
+    $classroom->students()->detach($student->id);
+
+    return redirect()->route('classrooms.manage', $classroom->id)->with('success_message', 'Student successfully removed.');
+}
+
+
+    // In app/Http/Controllers/ClassroomController.php
+
+public function manage(Request $request, $id)
+{
+    $classroom = Classroom::with(['teachers', 'students', 'assignments.user', 'school'])->findOrFail($id);
+    $user = Auth::user();
+
+    // If the user is a student, load their submissions for the assignments in this class
+    if ($user->role === 'student') {
+        // This loads the 'submissions' relationship on each assignment, but only for the current student.
+        $classroom->load(['assignments.submissions' => function ($query) use ($user) {
+            $query->where('student_id', $user->id);
+        }]);
+    }
+
+    return Inertia::render('ClassroomManagePage', ['classroom' => $classroom]);
+}
 
     // Changed parameter from Classroom $classroom to Classroom $class_instance_id
     // Laravel will bind the {class_instance_id} route segment to this $class_instance_id variable as a Classroom model

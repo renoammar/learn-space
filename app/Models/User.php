@@ -30,7 +30,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    // In app/Models/User.php, add this method to the class
 
+    public function submissions()
+        {
+    return $this->hasMany(AssignmentSubmission::class, 'student_id');
+    }
     // A user belongs to a school
     public function school()
     {

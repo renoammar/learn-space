@@ -59,7 +59,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.manage');
     Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
         ->name('classrooms.add-teacher');
+    // Assignment Routes
+Route::post('/classrooms/{classroom}/assignments', [\App\Http\Controllers\AssignmentController::class, 'store'])->name('assignments.store');
+Route::get('/assignments/{assignment}', [\App\Http\Controllers\AssignmentController::class, 'show'])->name('assignments.show');
+Route::post('/assignments/{assignment}/submit', [\App\Http\Controllers\AssignmentController::class, 'submit'])->name('assignments.submit');
 
+// Student Enrollment Routes
+Route::post('/classrooms/{classroom}/enroll-student', [ClassroomController::class, 'enrollStudent'])->name('classrooms.enrollStudent');
+Route::delete('/classrooms/{classroom}/remove-student/{student}', [ClassroomController::class, 'removeStudent'])->name('classrooms.removeStudent');
     // --- FIX: ADD THE MISSING SCHOOL MEMBERS ROUTE ---
     Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
 });

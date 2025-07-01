@@ -1,12 +1,10 @@
-// resources/js/Pages/ClassroomManagePage.tsx
-
 import { PageProps as InertiaBasePageProps } from '@inertiajs/core';
-import { Head, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { AlertCircle, BookOpen, CheckCircle, Plus, UserPlus, Users } from 'lucide-react';
 import { FormEvent, useEffect, useState } from 'react';
-import Layout from './Layout'; // Ensure this path is correct for your project
+import CreateAssignmentModal from '../MyComponents/CreateAssignmentModal';
+import Layout from './Layout';
 
-// --- Type Definitions ---
 interface AuthenticatedUser {
     id: number;
     name: string;
@@ -24,11 +22,20 @@ interface Student {
     name: string;
     email: string;
 }
+interface Submission {
+    id: number;
+    student_id: number;
+    status: string;
+}
 interface Assignment {
     id: number;
     title: string;
     description: string | null;
     due_date: string;
+    user?: {
+        name: string;
+    };
+    submissions: Submission[];
 }
 interface Classroom {
     id: number;
@@ -51,12 +58,36 @@ export default function ClassroomManagePage() {
     const { props } = usePage<ComponentPageProps>();
     const { classroom, auth, errors: pageErrors, flash } = props;
     const currentUserRole = auth.user.role;
+    const isTeacherOrPrincipal = currentUserRole === 'teacher' || currentUserRole === 'principal';
 
     type ActiveTab = 'teachers' | 'students' | 'assignments';
-    const [activeTab, setActiveTab] = useState<ActiveTab>('teachers');
+    const [activeTab, setActiveTab] = useState<ActiveTab>(isTeacherOrPrincipal ? 'teachers' : 'assignments');
     const [teacherEmail, setTeacherEmail] = useState('');
     const [successMessage, setSuccessMessage] = useState<string | null>(flash?.success_message || null);
     const [errorMessage, setErrorMessage] = useState<string | null>(flash?.error_message || null);
+    const [showCreateAssignmentModal, setShowCreateAssignmentModal] = useState(false);
+    const [studentEmail, setStudentEmail] = useState('');
+
+    const handleEnrollStudent = (e: FormEvent) => {
+        e.preventDefault();
+        router.post(
+            route('classrooms.enrollStudent', { classroom: classroom.id }),
+            { student_email: studentEmail },
+            {
+                onSuccess: () => setStudentEmail(''),
+                preserveState: (page) => Object.keys(page.props.errors).length > 0,
+                preserveScroll: true,
+            },
+        );
+    };
+
+    const handleRemoveStudent = (studentId: number) => {
+        if (confirm('Are you sure you want to remove this student?')) {
+            router.delete(route('classrooms.removeStudent', { classroom: classroom.id, student: studentId }), {
+                preserveScroll: true,
+            });
+        }
+    };
 
     useEffect(() => {
         setSuccessMessage(flash?.success_message || null);
@@ -71,19 +102,12 @@ export default function ClassroomManagePage() {
     const handleAddCoTeacher = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!teacherEmail.trim()) return;
-
-        console.log('Attempting to add teacher to Classroom ID:', classroom.id, 'with email:', teacherEmail);
         router.post(
-            // IMPORTANT: Changed parameter name from 'classroom' to 'class_instance_id'
             (window as any).route('classrooms.add-teacher', { class_instance_id: classroom.id }),
             { teacher_email: teacherEmail },
             {
-                onSuccess: () => {
-                    setTeacherEmail('');
-                },
-                onError: (errors) => {
-                    console.error('Error adding co-teacher:', errors);
-                },
+                onSuccess: () => setTeacherEmail(''),
+                onError: (errors) => console.error('Error adding co-teacher:', errors),
                 preserveState: (page) => Object.keys(page.props.errors).length > 0,
                 preserveScroll: true,
             },
@@ -100,172 +124,223 @@ export default function ClassroomManagePage() {
     };
 
     const tabItems = [
-        { key: 'teachers' as ActiveTab, label: 'Co-Teachers', icon: UserPlus },
-        { key: 'students' as ActiveTab, label: 'Students', icon: Users },
-        { key: 'assignments' as ActiveTab, label: 'Assignments', icon: BookOpen },
+        { key: 'teachers' as ActiveTab, label: 'Teachers', icon: UserPlus, visible: true },
+        { key: 'students' as ActiveTab, label: 'Students', icon: Users, visible: true },
+        { key: 'assignments' as ActiveTab, label: 'Assignments', icon: BookOpen, visible: true },
     ];
 
     return (
         <Layout>
-            {' '}
-            {/* Ensure Layout is correctly imported and used */}
             <Head title={`Manage Classroom: ${classroom.name}`} />
-            <div className="px-4 py-8 sm:px-6 lg:px-8">
+            <div className="min-h-screen bg-[#F8FAFC] px-4 py-8 sm:px-6 lg:px-8">
                 <div className="mx-auto max-w-5xl">
-                    {/* Header */}
-                    <div className="mb-8 rounded-xl bg-white p-6 shadow-lg dark:bg-gray-800">
-                        <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl dark:text-gray-100">{classroom.name}</h1>
-                        <p className="mt-2 text-lg text-gray-600 dark:text-gray-400">
-                            Class Code: <span className="font-semibold tracking-wider text-indigo-600 dark:text-indigo-400">{classroom.code}</span>
+                    <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+                        <h1 className="text-3xl font-bold text-gray-900">{classroom.name}</h1>
+                        <p className="mt-2 text-lg text-gray-600">
+                            Class Code: <span className="font-semibold text-blue-600">{classroom.code}</span>
                         </p>
-                        {classroom.description && <p className="text-md mt-1 text-gray-500 dark:text-gray-300">{classroom.description}</p>}
+                        {classroom.description && <p className="text-md mt-1 text-gray-500">{classroom.description}</p>}
                     </div>
 
-                    {/* Flash Messages */}
                     {successMessage && (
-                        <div className="mb-6 flex items-center gap-3 rounded-md border border-green-300 bg-green-50 p-4 text-green-700 dark:border-green-600 dark:bg-green-800/30 dark:text-green-300">
+                        <div className="mb-6 flex items-center gap-3 rounded-md border border-green-300 bg-green-50 p-4 text-green-700">
                             <CheckCircle size={20} /> <span>{successMessage}</span>
                         </div>
                     )}
                     {errorMessage && (
-                        <div className="mb-6 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 p-4 text-red-700 dark:border-red-600 dark:bg-red-800/30 dark:text-red-300">
+                        <div className="mb-6 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 p-4 text-red-700">
                             <AlertCircle size={20} /> <span>{errorMessage}</span>
                         </div>
                     )}
                     {pageErrors?.teacher_email && !errorMessage && (
-                        <div className="mb-6 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 p-4 text-red-700 dark:border-red-600 dark:bg-red-800/30 dark:text-red-300">
+                        <div className="mb-6 flex items-center gap-3 rounded-md border border-red-300 bg-red-50 p-4 text-red-700">
                             <AlertCircle size={20} /> <span>{pageErrors.teacher_email}</span>
                         </div>
                     )}
 
-                    {/* Tab Navigation */}
                     <div className="mb-1">
-                        <div className="border-b border-gray-200 dark:border-gray-700">
+                        <div className="border-b border-gray-200">
                             <nav className="-mb-px flex space-x-4 sm:space-x-6" aria-label="Tabs">
-                                {tabItems.map((tab) => (
-                                    <button
-                                        key={tab.key}
-                                        onClick={() => setActiveTab(tab.key)}
-                                        className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap sm:px-3 ${activeTab === tab.key ? 'border-indigo-500 text-indigo-600 dark:border-indigo-400 dark:text-indigo-300' : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:text-gray-200'}`}
-                                    >
-                                        {' '}
-                                        <tab.icon size={18} aria-hidden="true" /> {tab.label}{' '}
-                                    </button>
-                                ))}
+                                {tabItems
+                                    .filter((tab) => tab.visible)
+                                    .map((tab) => (
+                                        <button
+                                            key={tab.key}
+                                            onClick={() => setActiveTab(tab.key)}
+                                            className={`flex items-center gap-2 border-b-2 px-1 py-4 text-sm font-medium whitespace-nowrap sm:px-3 ${
+                                                activeTab === tab.key
+                                                    ? 'border-blue-500 text-blue-600'
+                                                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                                            }`}
+                                        >
+                                            <tab.icon size={18} aria-hidden="true" /> {tab.label}
+                                        </button>
+                                    ))}
                             </nav>
                         </div>
                     </div>
 
-                    {/* Content Sections */}
-                    <div className="mt-8 overflow-hidden rounded-lg bg-white shadow-xl dark:bg-gray-800">
+                    <div className="mt-8 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
                         <div className="p-6 sm:p-8">
+                            {/* TEACHERS TAB */}
                             {activeTab === 'teachers' && (
                                 <div>
-                                    <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-center dark:border-gray-700">
-                                        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Co-Teachers List</h2>
+                                    <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-center">
+                                        <h2 className="text-xl font-semibold text-gray-900">Co-Teachers List</h2>
                                         {currentUserRole === 'principal' && (
                                             <form onSubmit={handleAddCoTeacher} className="flex w-full items-stretch sm:w-auto sm:max-w-md">
                                                 <input
                                                     type="email"
                                                     value={teacherEmail}
                                                     onChange={(e) => setTeacherEmail(e.target.value)}
-                                                    placeholder="Co-teacher's email address"
-                                                    className="form-input flex-grow rounded-l-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:focus:border-indigo-400 dark:focus:ring-indigo-400"
+                                                    placeholder="Co-teacher's email"
+                                                    className="form-input flex-grow rounded-l-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
                                                     required
                                                 />
                                                 <button
                                                     type="submit"
-                                                    className="inline-flex items-center justify-center rounded-r-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:outline-none dark:focus:ring-offset-gray-800"
+                                                    className="inline-flex items-center rounded-r-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
                                                 >
-                                                    <Plus size={18} className="mr-0 sm:mr-2" /> <span className="hidden sm:inline">Add Teacher</span>{' '}
-                                                    <span className="sm:hidden">Add</span>
+                                                    <Plus size={18} className="mr-2" /> Add
                                                 </button>
                                             </form>
                                         )}
                                     </div>
                                     {classroom.teachers.length > 0 ? (
-                                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
+                                        <ul className="divide-y divide-gray-200">
                                             {classroom.teachers.map((teacher) => (
-                                                <li key={teacher.id} className="flex items-center justify-between py-4">
-                                                    {' '}
-                                                    <div>
-                                                        {' '}
-                                                        <p className="text-md font-medium text-gray-800 dark:text-gray-200">{teacher.name}</p>{' '}
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400">{teacher.email}</p>{' '}
-                                                    </div>{' '}
+                                                <li key={teacher.id} className="py-4">
+                                                    <p className="text-md font-medium text-gray-800">{teacher.name}</p>
+                                                    <p className="text-sm text-gray-500">{teacher.email}</p>
                                                 </li>
                                             ))}
                                         </ul>
                                     ) : (
-                                        <p className="text-gray-500 dark:text-gray-400">No co-teachers have been added yet.</p>
+                                        <p className="text-gray-500">No co-teachers have been added yet.</p>
                                     )}
                                 </div>
                             )}
+
+                            {/* STUDENTS TAB */}
                             {activeTab === 'students' && (
                                 <div>
-                                    {' '}
-                                    <h2 className="mb-6 border-b border-gray-200 pb-4 text-xl font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100">
-                                        Enrolled Students
-                                    </h2>{' '}
+                                    <div className="mb-6 flex flex-col items-start justify-between gap-4 border-b border-gray-200 pb-4 sm:flex-row sm:items-center">
+                                        <h2 className="text-xl font-semibold text-gray-900">Enrolled Students</h2>
+                                        {isTeacherOrPrincipal && (
+                                            <form onSubmit={handleEnrollStudent} className="flex w-full items-stretch sm:w-auto sm:max-w-md">
+                                                <input
+                                                    type="email"
+                                                    value={studentEmail}
+                                                    onChange={(e) => setStudentEmail(e.target.value)}
+                                                    placeholder="Student's email"
+                                                    className="form-input flex-grow rounded-l-md border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                                                    required
+                                                />
+                                                <button
+                                                    type="submit"
+                                                    className="inline-flex items-center rounded-r-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+                                                >
+                                                    <Plus size={18} />
+                                                </button>
+                                            </form>
+                                        )}
+                                    </div>
+                                    {pageErrors.student_email && <div className="mb-4 text-sm text-red-500">{pageErrors.student_email}</div>}
                                     {classroom.students.length > 0 ? (
-                                        <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-                                            {' '}
+                                        <ul className="divide-y divide-gray-200">
                                             {classroom.students.map((student) => (
                                                 <li key={student.id} className="flex items-center justify-between py-4">
-                                                    {' '}
                                                     <div>
-                                                        {' '}
-                                                        <p className="text-md font-medium text-gray-800 dark:text-gray-200">{student.name}</p>{' '}
-                                                        <p className="text-sm text-gray-500 dark:text-gray-400">{student.email}</p>{' '}
-                                                    </div>{' '}
+                                                        <p className="text-md font-medium text-gray-800">{student.name}</p>
+                                                        <p className="text-sm text-gray-500">{student.email}</p>
+                                                    </div>
+                                                    {isTeacherOrPrincipal && (
+                                                        <button
+                                                            onClick={() => handleRemoveStudent(student.id)}
+                                                            className="rounded-md bg-red-100 px-3 py-1 text-xs text-red-700 hover:bg-red-200"
+                                                        >
+                                                            Remove
+                                                        </button>
+                                                    )}
                                                 </li>
-                                            ))}{' '}
+                                            ))}
                                         </ul>
                                     ) : (
-                                        <p className="text-gray-500 dark:text-gray-400">No students are currently enrolled in this class.</p>
-                                    )}{' '}
+                                        <p className="text-gray-500">No students are currently enrolled in this class.</p>
+                                    )}
                                 </div>
                             )}
+
+                            {/* ASSIGNMENTS TAB */}
                             {activeTab === 'assignments' && (
                                 <div>
-                                    {' '}
-                                    <h2 className="mb-6 border-b border-gray-200 pb-4 text-xl font-semibold text-gray-900 dark:border-gray-700 dark:text-gray-100">
-                                        Class Assignments
-                                    </h2>{' '}
+                                    <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
+                                        <h2 className="text-xl font-semibold text-gray-900">Class Assignments</h2>
+                                        {isTeacherOrPrincipal && (
+                                            <button
+                                                onClick={() => setShowCreateAssignmentModal(true)}
+                                                className="flex items-center rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                                            >
+                                                <Plus size={16} className="mr-2" />
+                                                Create Assignment
+                                            </button>
+                                        )}
+                                    </div>
                                     {classroom.assignments.length > 0 ? (
                                         <ul className="space-y-4">
-                                            {' '}
-                                            {classroom.assignments.map((assignment) => (
-                                                <li key={assignment.id} className="rounded-md border border-gray-200 p-4 dark:border-gray-700">
-                                                    {' '}
-                                                    <div className="flex items-center justify-between">
-                                                        {' '}
-                                                        <h3 className="text-lg font-semibold text-indigo-700 dark:text-indigo-400">
-                                                            {assignment.title}
-                                                        </h3>{' '}
-                                                    </div>{' '}
-                                                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                        {' '}
-                                                        Due: {formatDate(assignment.due_date)}{' '}
-                                                    </p>{' '}
-                                                    {assignment.description && (
-                                                        <p className="mt-2 text-sm whitespace-pre-line text-gray-600 dark:text-gray-300">
-                                                            {' '}
-                                                            {assignment.description}{' '}
-                                                        </p>
-                                                    )}{' '}
-                                                </li>
-                                            ))}{' '}
+                                            {classroom.assignments.map((assignment) => {
+                                                const hasSubmitted =
+                                                    !isTeacherOrPrincipal && assignment.submissions && assignment.submissions.length > 0;
+                                                return (
+                                                    <li
+                                                        key={assignment.id}
+                                                        className="rounded-md border border-gray-200 p-4 transition-shadow hover:shadow-md"
+                                                    >
+                                                        <div className="flex items-start justify-between">
+                                                            <div className="flex-grow">
+                                                                <Link
+                                                                    href={route('assignments.show', assignment.id)}
+                                                                    className="text-lg font-semibold text-blue-700 hover:underline"
+                                                                >
+                                                                    {assignment.title}
+                                                                </Link>
+                                                                <p className="text-sm text-gray-500">Due: {formatDate(assignment.due_date)}</p>
+                                                                {assignment.description && (
+                                                                    <p className="mt-2 text-sm whitespace-pre-line text-gray-600">
+                                                                        {assignment.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                            <div className="ml-4 flex-shrink-0 text-right">
+                                                                {isTeacherOrPrincipal ? (
+                                                                    <span className="text-sm text-gray-500">
+                                                                        By: {assignment.user?.name || 'N/A'}
+                                                                    </span>
+                                                                ) : hasSubmitted ? (
+                                                                    <span className="rounded-full bg-green-100 px-3 py-1 text-xs font-semibold text-green-800">
+                                                                        Done
+                                                                    </span>
+                                                                ) : (
+                                                                    <span className="rounded-full bg-yellow-100 px-3 py-1 text-xs font-semibold text-yellow-800">
+                                                                        To Do
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </li>
+                                                );
+                                            })}
                                         </ul>
                                     ) : (
-                                        <p className="text-gray-500 dark:text-gray-400">No assignments have been created for this class yet.</p>
-                                    )}{' '}
+                                        <p className="text-gray-500">No assignments have been created for this class yet.</p>
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
                 </div>
             </div>
+            {showCreateAssignmentModal && <CreateAssignmentModal classroomId={classroom.id} onClose={() => setShowCreateAssignmentModal(false)} />}
         </Layout>
     );
 }
