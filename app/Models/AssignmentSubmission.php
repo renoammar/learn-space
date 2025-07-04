@@ -9,13 +9,15 @@ class AssignmentSubmission extends Model
 {
     use HasFactory;
 
-   protected $fillable = [
-    'assignment_id',
-    'student_id',
-    'content',
-    'submitted_at',
-    'status', // Add this
-];
+    protected $fillable = [
+        'assignment_id',
+        'student_id',
+        'content',
+        'submitted_at',
+        'status',
+        'grade',      // Add this line
+        'feedback',   // Add this line
+    ];
 
     protected function casts(): array
     {

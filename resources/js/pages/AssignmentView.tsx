@@ -1,3 +1,4 @@
+import SubmissionGrader from '@/MyComponents/SubmissionGrader'; // Import the new component
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import React, { FormEvent } from 'react';
@@ -10,6 +11,7 @@ interface AuthenticatedUser {
     email: string;
     role: 'principal' | 'teacher' | 'student';
 }
+
 interface Submission {
     id: number;
     content: string;
@@ -18,7 +20,10 @@ interface Submission {
         id: number;
         name: string;
     };
+    grade?: number | null;
+    feedback?: string | null;
 }
+
 interface Assignment {
     id: number;
     classroom_id: number;
@@ -28,6 +33,7 @@ interface Assignment {
     submissions: Submission[];
     user: { name: string };
 }
+
 interface PageProps {
     assignment: Assignment;
     mySubmission: Submission | null;
@@ -36,6 +42,7 @@ interface PageProps {
     [key: string]: any;
 }
 
+// --- Main Assignment View Component ---
 const AssignmentView: React.FC & { layout?: (page: React.ReactNode) => React.ReactNode } = () => {
     const { props } = usePage<PageProps>();
     const { assignment, auth, mySubmission, flash } = props;
@@ -100,13 +107,7 @@ const AssignmentView: React.FC & { layout?: (page: React.ReactNode) => React.Rea
                         {assignment.submissions.length > 0 ? (
                             <ul className="space-y-4">
                                 {assignment.submissions.map((submission) => (
-                                    <li key={submission.id} className="rounded-md border border-gray-200 p-4">
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-gray-800">{submission.student.name}</p>
-                                            <p className="text-xs text-gray-500">Submitted: {formatDate(submission.submitted_at)}</p>
-                                        </div>
-                                        <p className="mt-2 text-sm whitespace-pre-wrap text-gray-600">{submission.content}</p>
-                                    </li>
+                                    <SubmissionGrader key={submission.id} submission={submission} />
                                 ))}
                             </ul>
                         ) : (
@@ -114,12 +115,27 @@ const AssignmentView: React.FC & { layout?: (page: React.ReactNode) => React.Rea
                         )}
                     </div>
                 ) : (
-                    // Student's View: Submission Form
+                    // Student's View: Submission Form and Grade
                     <div className="rounded-xl border border-gray-200 bg-white p-6 shadow">
                         <h2 className="mb-4 text-2xl font-semibold text-gray-800">{mySubmission ? 'Your Submission' : 'Submit Your Work'}</h2>
                         {flash?.success_message && wasSuccessful && (
                             <div className="mb-4 rounded-md bg-green-100 p-3 text-sm text-green-700">{flash.success_message}</div>
                         )}
+
+                        {/* Grade and Feedback Display */}
+                        {mySubmission && mySubmission.grade !== null && typeof mySubmission.grade !== 'undefined' && (
+                            <div className="mb-6 rounded-lg border-2 border-green-200 bg-green-50 p-4">
+                                <h3 className="text-lg font-semibold text-green-800">Your Grade & Feedback</h3>
+                                <p className="text-4xl font-bold text-green-700">{mySubmission.grade}</p>
+                                {mySubmission.feedback && (
+                                    <div className="prose prose-sm mt-2 text-green-900">
+                                        <p className="font-medium">Feedback:</p>
+                                        <p>{mySubmission.feedback}</p>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         <form onSubmit={handleSubmit}>
                             <textarea
                                 value={data.content}

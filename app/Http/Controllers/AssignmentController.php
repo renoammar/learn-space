@@ -39,6 +39,8 @@ class AssignmentController extends Controller
     {
         $user = Auth::user();
         $classroom = $assignment->classroom;
+
+        // Eager load relationships for efficiency
         $assignment->load(['submissions.student', 'user']);
 
         if ($user->role === 'student' && !$classroom->students()->where('users.id', $user->id)->exists()) {
@@ -47,6 +49,7 @@ class AssignmentController extends Controller
 
         $mySubmission = null;
         if ($user->role === 'student') {
+            // Find the student's specific submission
             $mySubmission = $assignment->submissions()->where('student_id', $user->id)->first();
         }
 
@@ -74,6 +77,33 @@ class AssignmentController extends Controller
             ['content' => $validated['content'], 'submitted_at' => now()]
         );
 
-        return redirect()->route('classrooms.manage', $assignment->id)->with('success_message', 'Assignment submitted successfully!');
+        return back()->with('success_message', 'Assignment submitted successfully!');
+    }
+
+    /**
+     * Store the grade and feedback for a submission.
+     */
+    public function grade(Request $request, AssignmentSubmission $submission)
+    {
+        $user = Auth::user();
+        $classroom = $submission->assignment->classroom;
+
+        // Authorization: Ensure the user is a teacher or principal for this classroom
+        if (!$classroom->teachers()->where('users.id', $user->id)->exists() && $user->role !== 'principal') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'grade' => 'required|numeric|min:0|max:100', // Example validation
+            'feedback' => 'nullable|string|max:5000',
+        ]);
+
+        $submission->update([
+            'grade' => $validated['grade'],
+            'feedback' => $validated['feedback'],
+            'status' => 'reviewed', // Update status to show it's been graded
+        ]);
+
+        return back()->with('success_message', 'Grade saved successfully!');
     }
 }

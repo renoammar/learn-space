@@ -1,10 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\SchoolController;
 use App\Models\School;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
@@ -17,24 +18,24 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $school = null;
         if ($user->role === 'teacher' || $user->role === 'principal') {
             if ($user->role === 'principal') {
-                 $school = School::where('principal_id', $user->id)->first();
+                $school = School::where('principal_id', $user->id)->first();
             } else {
                 $school = $user->school;
             }
         }
         return Inertia::render('home', [
-            'school' => $school
+            'school' => $school,
         ]);
     })->name('home');
-    
-    Route::get('/add-teacher-toschool',function () {
+
+    Route::get('/add-teacher-toschool', function () {
         return Inertia::render('addTeacherToSchool');
     })->name('add.teacher.toschool');
 
     Route::post('/schools/add-teacher', [SchoolController::class, 'addTeacher'])
         ->name('schools.addTeacher')
         ->middleware('role:principal');
-    
+
     // START OF FIX
     Route::get('/add-student-toschool', function () {
         return Inertia::render('addStudentToSchool');
@@ -59,16 +60,23 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.manage');
     Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
         ->name('classrooms.add-teacher');
+        
     // Assignment Routes
-Route::post('/classrooms/{classroom}/assignments', [\App\Http\Controllers\AssignmentController::class, 'store'])->name('assignments.store');
-Route::get('/assignments/{assignment}', [\App\Http\Controllers\AssignmentController::class, 'show'])->name('assignments.show');
-Route::post('/assignments/{assignment}/submit', [\App\Http\Controllers\AssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::post('/classrooms/{classroom}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
+    Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
+    Route::post('/assignments/{assignment}/submit', [AssignmentController::class, 'submit'])->name('assignments.submit');
 
-// Student Enrollment Routes
-Route::post('/classrooms/{classroom}/enroll-student', [ClassroomController::class, 'enrollStudent'])->name('classrooms.enrollStudent');
-Route::delete('/classrooms/{classroom}/remove-student/{student}', [ClassroomController::class, 'removeStudent'])->name('classrooms.removeStudent');
+    // Student Enrollment Routes
+    Route::post('/classrooms/{classroom}/enroll-student', [ClassroomController::class, 'enrollStudent'])->name('classrooms.enrollStudent');
+    Route::delete('/classrooms/{classroom}/remove-student/{student}', [ClassroomController::class, 'removeStudent'])->name('classrooms.removeStudent');
+    
     // --- FIX: ADD THE MISSING SCHOOL MEMBERS ROUTE ---
     Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
+
+    // New Grading Route
+    Route::post('/submissions/{submission}/grade', [AssignmentController::class, 'grade'])
+        ->name('submissions.grade')
+        ->middleware('auth');
 });
 
 require __DIR__.'/settings.php';
