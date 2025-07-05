@@ -12,7 +12,7 @@ export default defineConfig({
             input: [
                 'resources/css/app.css',
                 'resources/js/app.tsx',
-                'resources/js/pages/**/*.tsx', // <-- Add this line
+                // 'resources/js/pages/**/*.tsx', // <-- Add this line
             ],
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
