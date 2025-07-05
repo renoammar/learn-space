@@ -33,7 +33,7 @@ type PageProps = {
 
 function StudentsClassesPage() {
     const { props } = usePage<PageProps>();
-    const { classrooms = [], school } = props;
+    const { classrooms = [] } = props;
     const [showModal, setShowModal] = useState(false);
 
     // Debug log is correctly placed inside the component

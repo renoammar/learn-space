@@ -98,12 +98,12 @@ export default function ClassroomManagePage() {
         }, 7000);
         return () => clearTimeout(timer);
     }, [flash]);
-
     const handleAddCoTeacher = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!teacherEmail.trim()) return;
         router.post(
-            (window as any).route('classrooms.add-teacher', { class_instance_id: classroom.id }),
+            // CORRECTED LINE: Removed '(window as any)'
+            route('classrooms.add-teacher', { class_instance_id: classroom.id }),
             { teacher_email: teacherEmail },
             {
                 onSuccess: () => setTeacherEmail(''),
@@ -113,12 +113,26 @@ export default function ClassroomManagePage() {
             },
         );
     };
+    // const handleAddCoTeacher = (e: FormEvent<HTMLFormElement>) => {
+    //     e.preventDefault();
+    //     if (!teacherEmail.trim()) return;
+    //     router.post(
+    //         (window as any).route('classrooms.add-teacher', { class_instance_id: classroom.id }),
+    //         { teacher_email: teacherEmail },
+    //         {
+    //             onSuccess: () => setTeacherEmail(''),
+    //             onError: (errors) => console.error('Error adding co-teacher:', errors),
+    //             preserveState: (page) => Object.keys(page.props.errors).length > 0,
+    //             preserveScroll: true,
+    //         },
+    //     );
+    // };
 
     const formatDate = (dateString: string | null): string => {
         if (!dateString) return 'N/A';
         try {
             return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-        } catch (e) {
+        } catch {
             return dateString;
         }
     };

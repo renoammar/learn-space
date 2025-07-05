@@ -2,10 +2,10 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import React from 'react';
 import Layout from './Layout';
 
-interface AddTeacherToSchoolProps {
-    // Add any props you might receive from the backend
-}
-
+// interface AddTeacherToSchoolProps {
+//     // Add any props you might receive from the backend
+// }
+type AddTeacherToSchoolProps = Record<string, never>;
 // Define the component type with layout property
 interface InertiaPageComponent extends React.FC<AddTeacherToSchoolProps> {
     layout?: (page: React.ReactNode) => React.ReactNode;
