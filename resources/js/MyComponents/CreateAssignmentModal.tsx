@@ -24,12 +24,12 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
     };
 
     return (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
-            <div className="w-full max-w-lg rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
-                <h2 className="mb-4 text-xl font-semibold text-gray-900 dark:text-gray-100">Create New Assignment</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-lg">
+            <div className="w-full max-w-lg rounded-xl bg-white p-8 shadow-xl">
+                <h2 className="mb-4 text-xl font-semibold text-[#152259]">Create New Assignment</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label htmlFor="title" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label htmlFor="title" className="mb-2 block text-sm font-medium text-[#152259]">
                             Title
                         </label>
                         <input
@@ -37,13 +37,13 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                             type="text"
                             value={data.title}
                             onChange={(e) => setData('title', e.target.value)}
-                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                            className="w-full rounded-lg border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600 focus:outline-none"
                             required
                         />
                         {errors.title && <div className="mt-1 text-sm text-red-600">{errors.title}</div>}
                     </div>
                     <div className="mb-4">
-                        <label htmlFor="description" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label htmlFor="description" className="mb-2 block text-sm font-medium text-[#152259]">
                             Description
                         </label>
                         <textarea
@@ -51,12 +51,12 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                             value={data.description}
                             onChange={(e) => setData('description', e.target.value)}
                             rows={4}
-                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600"
                         />
                         {errors.description && <div className="mt-1 text-sm text-red-600">{errors.description}</div>}
                     </div>
                     <div className="mb-6">
-                        <label htmlFor="due_date" className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                        <label htmlFor="due_date" className="mb-2 block text-sm font-medium text-[#152259]">
                             Due Date
                         </label>
                         <input
@@ -64,7 +64,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                             type="date"
                             value={data.due_date}
                             onChange={(e) => setData('due_date', e.target.value)}
-                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200"
+                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600"
                         />
                         {errors.due_date && <div className="mt-1 text-sm text-red-600">{errors.due_date}</div>}
                     </div>
@@ -72,14 +72,14 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                         <button
                             type="button"
                             onClick={onClose}
-                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+                            className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-[#152259] hover:bg-gray-50"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={processing}
-                            className="rounded-lg bg-indigo-600 px-4 py-2 text-white hover:bg-indigo-700 disabled:opacity-75"
+                            className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-75"
                         >
                             {processing ? 'Creating...' : 'Create'}
                         </button>

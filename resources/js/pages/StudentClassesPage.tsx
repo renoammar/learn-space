@@ -91,7 +91,7 @@ function StudentsClassesPage() {
 
             {/* Modal Tambah Kelas */}
             {showModal && (
-                <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-lg">
                     <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
                         <h2 className="mb-4 text-xl font-semibold">Tambah Kelas Baru</h2>
                         <form onSubmit={handleSubmit}>
@@ -112,7 +112,10 @@ function StudentsClassesPage() {
                             <div className="flex justify-end gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => setShowModal(false)}
+                                    onClick={() => {
+                                        reset();
+                                        setShowModal(false);
+                                    }}
                                     className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-gray-700 hover:bg-gray-50"
                                 >
                                     Batal

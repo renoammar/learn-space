@@ -1,6 +1,13 @@
 import { router } from '@inertiajs/react';
 import { FormEvent, useState } from 'react';
 
+import GradientBackground from '@/MyComponents/GradientBackground';
+import InputError from '@/components/input-error';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Head } from '@inertiajs/react';
+
 export default function SchoolCreate() {
     const [name, setName] = useState('');
     const [errors, setErrors] = useState<{ name?: string }>({});
@@ -19,28 +26,34 @@ export default function SchoolCreate() {
     };
 
     return (
-        <div className="mx-auto mt-10 max-w-xl rounded-2xl bg-white p-6 shadow">
-            <h1 className="mb-4 text-2xl font-bold">Buat Sekolah Baru</h1>
+        <>
+            <Head title="Buat Sekolah" />
+            <GradientBackground>
+                <div className="flex min-h-screen w-full items-center justify-center px-4">
+                    <div className="w-full max-w-md rounded-2xl bg-white p-8 text-gray-800 shadow-lg">
+                        <h1 className="mb-2 text-center text-2xl font-bold">Buat Sekolah Baru</h1>
+                        <p className="text-muted-foreground mb-6 text-center text-sm">Masukkan nama sekolah yang ingin didaftarkan.</p>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                        Nama Sekolah
-                    </label>
-                    <input
-                        type="text"
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="mt-1 block w-full rounded-md border border-gray-300 p-2 shadow-sm"
-                    />
-                    {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="name">Nama Sekolah</Label>
+                                <Input
+                                    id="name"
+                                    type="text"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
+                                    placeholder="Contoh: SMAN 1 Jakarta"
+                                />
+                                <InputError message={errors.name} />
+                            </div>
+
+                            <Button type="submit" className="mt-2 w-full bg-[#00AEEF] text-white hover:bg-[#008ecc]">
+                                Simpan Sekolah
+                            </Button>
+                        </form>
+                    </div>
                 </div>
-
-                <button type="submit" className="rounded bg-blue-600 px-4 py-2 font-bold text-white hover:bg-blue-700">
-                    Simpan Sekolah
-                </button>
-            </form>
-        </div>
+            </GradientBackground>
+        </>
     );
 }
