@@ -39,7 +39,7 @@ interface PageProps {
     mySubmission: Submission | null;
     auth: { user: AuthenticatedUser };
     flash?: { success_message?: string };
-    [key: string]: any;
+    [key: string]: unknown; // Changed from 'any' to 'unknown'
 }
 
 // --- Main Assignment View Component ---
