@@ -23,15 +23,12 @@ class ClassroomController extends Controller
         $classrooms = collect();
 
         if ($user->role === 'teacher' || $user->role === 'principal') {
-            if (method_exists($user, 'teachingClassrooms')) {
-                 $classrooms = $user->teachingClassrooms()->orderBy('name')->get(['classrooms.id', 'classrooms.name', 'classrooms.code']);
-            } elseif (method_exists($user, 'classrooms')) {
-                 $classrooms = $user->classrooms()->orderBy('name')->get(['classrooms.id', 'classrooms.name', 'classrooms.code']);
-            }
+            // FIX: The 'teachingClassrooms' method did not exist.
+            // The 'classrooms' relationship correctly fetches classrooms for teachers.
+            $classrooms = $user->classrooms()->orderBy('name')->get(['classrooms.id', 'classrooms.name', 'classrooms.code']);
         } elseif ($user->role === 'student') {
-            if (method_exists($user, 'studentClassrooms')) {
-                $classrooms = $user->studentClassrooms()->orderBy('name')->get(['classrooms.id', 'classrooms.name', 'classrooms.code']);
-            }
+            // FIX: Using the renamed 'enrolledClassrooms' relationship for students.
+            $classrooms = $user->enrolledClassrooms()->orderBy('name')->get(['classrooms.id', 'classrooms.name', 'classrooms.code']);
         }
         return Inertia::render('StudentClassesPage', ['classrooms' => $classrooms]);
     }

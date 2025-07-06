@@ -4,6 +4,24 @@ import { usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
 import Layout from './Layout';
 
+// START: ADDED TYPES
+interface Assignment {
+    id: number;
+    title: string;
+    due_date: string;
+    classroom_id: number;
+}
+
+interface GradedSubmission {
+    id: number;
+    grade: number;
+    assignment: {
+        id: number;
+        title: string;
+    };
+}
+// END: ADDED TYPES
+
 type School = {
     id: number;
     name: string;
@@ -23,21 +41,28 @@ type PageProps = {
     auth: {
         user: User | null;
     };
-    school: School | null; // Tambahkan tipe untuk school
+    school: School | null;
+    pendingAssignments: Assignment[];
+    gradedAssignments: GradedSubmission[];
 };
 
 function Home() {
     const { props } = usePage<PageProps>();
     const user = props.auth?.user;
-    const school = props.school; // Ambil data school dari props
+    const school = props.school;
+    const { pendingAssignments, gradedAssignments } = props;
 
     if (!user) {
-        return <div className="p-4 text-lg">Login bg 😎</div>;
+        return <div className="p-4 text-lg">Login bg ðŸ˜Ž</div>;
     }
 
     return (
         <div className="p-4">
-            {user.role === 'student' ? <StudentDashboard studentName={user.name} /> : <TeacherDashboard user={user} school={school} />}
+            {user.role === 'student' ? (
+                <StudentDashboard studentName={user.name} pendingAssignments={pendingAssignments} gradedAssignments={gradedAssignments} />
+            ) : (
+                <TeacherDashboard user={user} school={school} />
+            )}
         </div>
     );
 }

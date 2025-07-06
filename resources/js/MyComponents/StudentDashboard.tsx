@@ -1,54 +1,99 @@
+import { Link } from '@inertiajs/react';
+import { BookCheck, FileClock } from 'lucide-react';
 import { FC } from 'react';
+
+// Define types based on what the backend will send
+interface Assignment {
+    id: number;
+    title: string;
+    due_date: string;
+    classroom_id: number;
+}
+
+interface GradedSubmission {
+    id: number;
+    grade: number;
+    assignment: {
+        id: number;
+        title: string;
+    };
+}
 
 interface StudentDashboardProps {
     studentName: string;
+    pendingAssignments: Assignment[];
+    gradedAssignments: GradedSubmission[];
 }
 
-const StudentDashboard: FC<StudentDashboardProps> = ({ studentName }) => {
+const formatDate = (dateString: string | null): string => {
+    if (!dateString) return 'No due date';
+    return new Date(dateString).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    });
+};
+
+const StudentDashboard: FC<StudentDashboardProps> = ({ studentName, pendingAssignments = [], gradedAssignments = [] }) => {
     return (
-        <div className="space-y-6 p-6">
-            <h1 className="text-2xl font-bold">Selamat datang, {studentName}!</h1>
+        <div className="space-y-8 p-6">
+            <div>
+                <h1 className="text-3xl font-bold text-gray-800">Welcome, {studentName}!</h1>
+                <p className="mt-1 text-gray-600">Here's a quick overview of your assignments.</p>
+            </div>
 
-            {/* Upcoming Classes */}
-            <section className="rounded-2xl bg-white p-4 shadow-md">
-                <h2 className="mb-2 text-xl font-semibold">Kelas Mendatang</h2>
-                <ul className="list-disc pl-6 text-sm text-gray-700">
-                    <li>Matematika - Senin, 09:00 WIB</li>
-                    <li>Fisika - Selasa, 10:30 WIB</li>
-                </ul>
-            </section>
+            {/* Assignments Section */}
+            <section>
+                <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
+                    {/* Pending Assignments */}
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                        <div className="mb-4 flex items-center gap-3">
+                            <FileClock className="h-6 w-6 text-orange-500" />
+                            <h3 className="text-xl font-semibold">Assignment Reminders</h3>
+                        </div>
+                        {pendingAssignments.length > 0 ? (
+                            <ul className="space-y-3">
+                                {pendingAssignments.map((assignment) => (
+                                    <li key={assignment.id} className="rounded-lg bg-gray-50 p-4 transition hover:bg-gray-100">
+                                        <Link href={route('assignments.show', assignment.id)} className="block">
+                                            <p className="font-semibold text-blue-700">{assignment.title}</p>
+                                            <p className="text-sm text-gray-500">Due: {formatDate(assignment.due_date)}</p>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-gray-500">You're all caught up! No pending assignments.</p>
+                        )}
+                    </div>
 
-            {/* Assignments */}
-            <section className="rounded-2xl bg-white p-4 shadow-md">
-                <h2 className="mb-2 text-xl font-semibold">Tugas yang Harus Dikerjakan</h2>
-                <ul className="list-disc pl-6 text-sm text-gray-700">
-                    <li>Essay Sejarah - Deadline 25 April</li>
-                    <li>Latihan Soal Kimia - Deadline 27 April</li>
-                </ul>
-            </section>
-
-            {/* Grades */}
-            <section className="rounded-2xl bg-white p-4 shadow-md">
-                <h2 className="mb-2 text-xl font-semibold">Nilai Terbaru</h2>
-                <div className="text-sm text-gray-700">
-                    <p>Matematika: 85</p>
-                    <p>Bahasa Inggris: 92</p>
+                    {/* Graded Assignments */}
+                    <div className="rounded-2xl bg-white p-6 shadow-md">
+                        <div className="mb-4 flex items-center gap-3">
+                            <BookCheck className="h-6 w-6 text-green-500" />
+                            <h3 className="text-xl font-semibold">Recently Graded</h3>
+                        </div>
+                        {gradedAssignments.length > 0 ? (
+                            <ul className="space-y-3">
+                                {gradedAssignments.map((submission) => (
+                                    <li key={submission.id} className="rounded-lg bg-gray-50 p-4 transition hover:bg-gray-100">
+                                        <Link
+                                            href={route('assignments.show', submission.assignment.id)}
+                                            className="flex items-center justify-between"
+                                        >
+                                            <p className="font-semibold text-blue-700">{submission.assignment.title}</p>
+                                            <span className="rounded-md bg-green-100 px-3 py-1 text-lg font-bold text-green-700">
+                                                {submission.grade}
+                                            </span>
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        ) : (
+                            <p className="text-sm text-gray-500">No recently graded assignments.</p>
+                        )}
+                    </div>
                 </div>
-            </section>
-
-            {/* Upcoming Exams */}
-            <section className="rounded-2xl bg-white p-4 shadow-md">
-                <h2 className="mb-2 text-xl font-semibold">Ujian Mendatang</h2>
-                <ul className="list-disc pl-6 text-sm text-gray-700">
-                    <li>Biologi - 29 April 2025</li>
-                    <li>Geografi - 30 April 2025</li>
-                </ul>
-            </section>
-
-            {/* Announcements */}
-            <section className="rounded-2xl bg-white p-4 shadow-md">
-                <h2 className="mb-2 text-xl font-semibold">Pengumuman</h2>
-                <p className="text-sm text-gray-700">Libur Nasional: 1 Mei 2025</p>
             </section>
         </div>
     );

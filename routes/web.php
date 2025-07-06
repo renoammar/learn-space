@@ -13,20 +13,46 @@ Route::get('/', function () {
 })->name('welcome');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/home', function () {
-        $user = Auth::user();
-        $school = null;
-        if ($user->role === 'teacher' || $user->role === 'principal') {
-            if ($user->role === 'principal') {
-                $school = School::where('principal_id', $user->id)->first();
-            } else {
-                $school = $user->school;
-            }
+  Route::get('/home', function () {
+    $user = Auth::user();
+    $school = null;
+    $pendingAssignments = [];
+    $gradedAssignments = [];
+
+    if ($user->role === 'student') {
+        // Get classroom IDs - use the collection directly, not the query builder
+        $classroomIds = $user->enrolledClassrooms->pluck('id');
+
+        // Fetch upcoming assignments the student hasn't submitted yet
+        $pendingAssignments = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)
+            ->whereDoesntHave('submissions', function ($query) use ($user) {
+                $query->where('student_id', $user->id);
+            })
+            ->orderBy('due_date', 'asc')
+            ->limit(5)
+            ->get(['id', 'title', 'due_date', 'classroom_id']);
+
+        // Fetch recently graded submissions
+        $gradedAssignments = \App\Models\AssignmentSubmission::where('student_id', $user->id)
+            ->whereNotNull('grade')
+            ->latest('updated_at')
+            ->with(['assignment:id,title']) // Eager load only necessary fields
+            ->limit(5)
+            ->get(['id', 'grade', 'assignment_id', 'updated_at']);
+    } elseif ($user->role === 'teacher' || $user->role === 'principal') {
+        if ($user->role === 'principal') {
+            $school = School::where('principal_id', $user->id)->first();
+        } else {
+            $school = $user->school;
         }
-        return Inertia::render('home', [
-            'school' => $school,
-        ]);
-    })->name('home');
+    }
+
+    return Inertia::render('home', [
+        'school' => $school,
+        'pendingAssignments' => $pendingAssignments,
+        'gradedAssignments' => $gradedAssignments,
+    ]);
+})->name('home');
 
     Route::get('/add-teacher-toschool', function () {
         return Inertia::render('addTeacherToSchool');
