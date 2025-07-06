@@ -154,11 +154,6 @@ class SchoolController extends BaseController
         /** @var \App\Models\User $user */
         $user = Auth::user();
 
-        // Only principals and teachers can see the member list
-        if ($user->role !== 'principal' && $user->role !== 'teacher') {
-            abort(403, 'Unauthorized action.');
-        }
-
         $school = $user->school;
 
         if (!$school) {
