@@ -170,4 +170,35 @@ public function addTeacher(Request $request, Classroom $class_instance_id)
     return redirect()->route('classrooms.manage', ['id' => $class_instance_id->id])
                      ->with('success_message', $teacherToAdd->name . ' has been successfully added as a co-teacher.');
 }
+
+    public function join(Request $request)
+    {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+
+        if ($user->role !== 'student') {
+            abort(403, 'Only students can join classes with a code.');
+        }
+
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'size:6', Rule::exists('classrooms', 'code')],
+        ], [
+            'code.exists' => 'No classroom found with this code.',
+            'code.size' => 'The code must be exactly 6 characters long.',
+        ]);
+
+        $classroom = Classroom::where('code', $validated['code'])->firstOrFail();
+
+        if ($user->school_id !== $classroom->school_id) {
+            return back()->with('error_message', 'You can only join classrooms within your own school.');
+        }
+
+        if ($classroom->students()->where('users.id', $user->id)->exists()) {
+            return back()->with('error_message', 'You are already enrolled in this class.');
+        }
+
+        $classroom->students()->attach($user->id);
+
+        return redirect()->route('students.classes')->with('success_message', 'Successfully joined the class: ' . $classroom->name);
+    }
 }

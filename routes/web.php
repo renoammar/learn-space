@@ -77,6 +77,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/submissions/{submission}/grade', [AssignmentController::class, 'grade'])
         ->name('submissions.grade')
         ->middleware('auth');
+
+    // New Route for students to join a class with a code
+    Route::post('/classrooms/join', [ClassroomController::class, 'join'])->name('classrooms.join');
 });
 
 require __DIR__.'/settings.php';
