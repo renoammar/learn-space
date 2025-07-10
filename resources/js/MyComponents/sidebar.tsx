@@ -69,7 +69,7 @@ const Sidebars: FC = () => {
                         text="Settings and profile"
                         isActive={activeItem === 'Settings and profile'}
                     />
-                    <SidebarItem onClick={handleItemClick} icon={<FileText size={16} />} text="Exams" isActive={activeItem === 'Exams'} />
+                    <SidebarItem onClick={handleItemClick} icon={<FileText size={16} />} text="Schedlue" isActive={activeItem === 'Exams'} />
                 </nav>
             </div>
 

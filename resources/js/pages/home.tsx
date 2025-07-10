@@ -53,13 +53,18 @@ function Home() {
     const { pendingAssignments, gradedAssignments } = props;
 
     if (!user) {
-        return <div className="p-4 text-lg">Login bg ðŸ˜Ž</div>;
+        return <div className="p-4 text-lg">Login bg 🤩</div>;
     }
 
     return (
         <div className="p-4">
             {user.role === 'student' ? (
-                <StudentDashboard studentName={user.name} pendingAssignments={pendingAssignments} gradedAssignments={gradedAssignments} />
+                <StudentDashboard
+                    studentName={user.name}
+                    school={school} // Pass school prop
+                    pendingAssignments={pendingAssignments}
+                    gradedAssignments={gradedAssignments}
+                />
             ) : (
                 <TeacherDashboard user={user} school={school} />
             )}

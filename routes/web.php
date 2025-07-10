@@ -13,46 +13,49 @@ Route::get('/', function () {
 })->name('welcome');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-  Route::get('/home', function () {
-    $user = Auth::user();
-    $school = null;
-    $pendingAssignments = [];
-    $gradedAssignments = [];
-
-    if ($user->role === 'student') {
-        // Get classroom IDs - use the collection directly, not the query builder
-        $classroomIds = $user->enrolledClassrooms->pluck('id');
-
-        // Fetch upcoming assignments the student hasn't submitted yet
-        $pendingAssignments = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)
-            ->whereDoesntHave('submissions', function ($query) use ($user) {
-                $query->where('student_id', $user->id);
-            })
-            ->orderBy('due_date', 'asc')
-            ->limit(5)
-            ->get(['id', 'title', 'due_date', 'classroom_id']);
-
-        // Fetch recently graded submissions
-        $gradedAssignments = \App\Models\AssignmentSubmission::where('student_id', $user->id)
-            ->whereNotNull('grade')
-            ->latest('updated_at')
-            ->with(['assignment:id,title']) // Eager load only necessary fields
-            ->limit(5)
-            ->get(['id', 'grade', 'assignment_id', 'updated_at']);
-    } elseif ($user->role === 'teacher' || $user->role === 'principal') {
-        if ($user->role === 'principal') {
-            $school = School::where('principal_id', $user->id)->first();
-        } else {
-            $school = $user->school;
+    Route::get('/home', function () {
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
+        
+        // Check if user exists (additional safety)
+        if (!$user) {
+            return redirect()->route('login');
         }
-    }
+        
+        $user->load('school'); // Eager load school for the user
+        $school = $user->school;
+        $pendingAssignments = [];
+        $gradedAssignments = [];
 
-    return Inertia::render('home', [
-        'school' => $school,
-        'pendingAssignments' => $pendingAssignments,
-        'gradedAssignments' => $gradedAssignments,
-    ]);
-})->name('home');
+        if ($user->role === 'student' && $school) { // Only fetch assignments if student is in a school
+            // Get classroom IDs - use the collection directly, not the query builder
+            $classroomIds = $user->enrolledClassrooms->pluck('id');
+
+            // Fetch upcoming assignments the student hasn't submitted yet
+            $pendingAssignments = \App\Models\Assignment::whereIn('classroom_id', $classroomIds)
+                ->whereDoesntHave('submissions', function ($query) use ($user) {
+                    $query->where('student_id', $user->id);
+                })
+                ->orderBy('due_date', 'asc')
+                ->limit(5)
+                ->get(['id', 'title', 'due_date', 'classroom_id']);
+
+            // Fetch recently graded submissions
+            $gradedAssignments = \App\Models\AssignmentSubmission::where('student_id', $user->id)
+                ->whereNotNull('grade')
+                ->latest('updated_at')
+                ->with(['assignment:id,title']) // Eager load only necessary fields
+                ->limit(5)
+                ->get(['id', 'grade', 'assignment_id', 'updated_at']);
+        } 
+        // No need for the teacher/principal specific logic for school, as it's loaded for all users now.
+
+        return Inertia::render('home', [
+            'school' => $school,
+            'pendingAssignments' => $pendingAssignments,
+            'gradedAssignments' => $gradedAssignments,
+        ]);
+    })->name('home');
 
     Route::get('/add-teacher-toschool', function () {
         return Inertia::render('addTeacherToSchool');

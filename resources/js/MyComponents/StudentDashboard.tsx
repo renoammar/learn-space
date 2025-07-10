@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookCheck, FileClock } from 'lucide-react';
+import { BookCheck, FileClock, School } from 'lucide-react';
 import { FC } from 'react';
 
 // Define types based on what the backend will send
@@ -19,8 +19,15 @@ interface GradedSubmission {
     };
 }
 
+// Add school to props
+interface StudentSchool {
+    id: number;
+    name: string;
+}
+
 interface StudentDashboardProps {
     studentName: string;
+    school: StudentSchool | null; // School can be null
     pendingAssignments: Assignment[];
     gradedAssignments: GradedSubmission[];
 }
@@ -34,12 +41,29 @@ const formatDate = (dateString: string | null): string => {
     });
 };
 
-const StudentDashboard: FC<StudentDashboardProps> = ({ studentName, pendingAssignments = [], gradedAssignments = [] }) => {
+const StudentDashboard: FC<StudentDashboardProps> = ({ studentName, school, pendingAssignments = [], gradedAssignments = [] }) => {
+    // Conditional rendering based on whether the student has a school
+    if (!school) {
+        return (
+            <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 p-8 text-center">
+                <School className="h-16 w-16 text-gray-400" />
+                <h1 className="text-2xl font-bold text-gray-800">Welcome, {studentName}!</h1>
+                <p className="max-w-md text-gray-600">
+                    You are not yet enrolled in a school. Please ask your school's principal to add you. Once you are added, you will be able to join
+                    classes and see your assignments here.
+                </p>
+                <p className="text-sm text-gray-500">Waiting to be invited...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-8 p-6">
             <div>
                 <h1 className="text-3xl font-bold text-gray-800">Welcome, {studentName}!</h1>
-                <p className="mt-1 text-gray-600">Here's a quick overview of your assignments.</p>
+                <p className="mt-1 text-gray-600">
+                    Here's a quick overview of your assignments from <span className="font-semibold">{school.name}</span>.
+                </p>
             </div>
 
             {/* Assignments Section */}
