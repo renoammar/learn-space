@@ -3,6 +3,7 @@
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\SchoolController;
+use App\Http\Controllers\ScheduleController; // Import the new controller
 use App\Models\School;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -109,6 +110,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // New Route for students to join a class with a code
     Route::post('/classrooms/join', [ClassroomController::class, 'join'])->name('classrooms.join');
+
+    // Schedule Routes
+    Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule.index');
+    Route::post('/schedule', [ScheduleController::class, 'store'])->name('schedule.store');
 });
 
 require __DIR__.'/settings.php';

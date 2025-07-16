@@ -1,7 +1,7 @@
 // File: resources/js/MyComponents/sidebar.tsx
 
 import { usePage } from '@inertiajs/react';
-import { FileText, GraduationCap, Home, Settings, Users } from 'lucide-react';
+import { CalendarDays, GraduationCap, Home, Settings, Users } from 'lucide-react'; // Import CalendarDays
 import { FC, useState } from 'react';
 import SidebarItem from './sidebarItem';
 
@@ -38,9 +38,9 @@ const Sidebars: FC = () => {
 
                 {/* Navigation Items */}
                 <nav className="space-y-2 text-sm text-white">
-                    {user?.role === 'teacher' && (
+                    {/* {user?.role === 'teacher' && (
                         <SidebarItem onClick={handleItemClick} icon={<Users size={16} />} text="Teachers" isActive={activeItem === 'Teachers'} />
-                    )}
+                    )} */}
                     <SidebarItem
                         href="/home"
                         onClick={handleItemClick}
@@ -69,7 +69,13 @@ const Sidebars: FC = () => {
                         text="Settings and profile"
                         isActive={activeItem === 'Settings and profile'}
                     />
-                    <SidebarItem onClick={handleItemClick} icon={<FileText size={16} />} text="Schedlue" isActive={activeItem === 'Exams'} />
+                    <SidebarItem
+                        href={route('schedule.index')}
+                        onClick={handleItemClick}
+                        icon={<CalendarDays size={16} />}
+                        text="Schedule"
+                        isActive={activeItem === 'Schedule'}
+                    />
                 </nav>
             </div>
 
