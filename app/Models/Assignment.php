@@ -14,7 +14,8 @@ class Assignment extends Model
         'title',
         'description',
         'due_date',
-        'user_id' // The user (teacher) who created the assignment
+        'user_id', // The user (teacher) who created the assignment
+        'submission_type', // Add this line
     ];
 
     protected function casts(): array

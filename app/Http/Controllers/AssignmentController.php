@@ -23,12 +23,14 @@ class AssignmentController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'due_date' => 'nullable|date',
+            'submission_type' => 'required|in:single,multiple', // Add validation
         ]);
 
         $classroom->assignments()->create([
             'title' => $validated['title'],
             'description' => $validated['description'],
             'due_date' => $validated['due_date'],
+            'submission_type' => $validated['submission_type'], // Save the value
             'user_id' => $user->id,
         ]);
 
@@ -68,13 +70,34 @@ class AssignmentController extends Controller
             abort(403, 'You are not enrolled in this class.');
         }
 
+        $existingSubmission = AssignmentSubmission::where('assignment_id', $assignment->id)
+                                                  ->where('student_id', $user->id)
+                                                  ->first();
+
+        // Check for single submission type
+        if ($assignment->submission_type === 'single' && $existingSubmission) {
+            return back()->with('error_message', 'This assignment can only be submitted once.');
+        }
+
         $validated = $request->validate([
             'content' => 'required|string',
         ]);
+        
+        $updateData = [
+            'content' => $validated['content'],
+            'submitted_at' => now(),
+            'status' => 'submitted', // Reset status on new submission
+        ];
+
+        // If resubmitting, clear previous grade and feedback
+        if ($existingSubmission && $assignment->submission_type === 'multiple') {
+            $updateData['grade'] = null;
+            $updateData['feedback'] = null;
+        }
 
         AssignmentSubmission::updateOrCreate(
             ['assignment_id' => $assignment->id, 'student_id' => $user->id],
-            ['content' => $validated['content'], 'submitted_at' => now()]
+            $updateData
         );
 
         return back()->with('success_message', 'Assignment submitted successfully!');

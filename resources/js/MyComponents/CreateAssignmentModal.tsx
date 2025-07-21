@@ -11,6 +11,7 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
         title: '',
         description: '',
         due_date: '',
+        submission_type: 'multiple', // Default value
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -67,6 +68,21 @@ const CreateAssignmentModal: React.FC<CreateAssignmentModalProps> = ({ classroom
                             className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600"
                         />
                         {errors.due_date && <div className="mt-1 text-sm text-red-600">{errors.due_date}</div>}
+                    </div>
+                    <div className="mb-6">
+                        <label htmlFor="submission_type" className="mb-2 block text-sm font-medium text-[#152259]">
+                            Submission Type
+                        </label>
+                        <select
+                            id="submission_type"
+                            value={data.submission_type}
+                            onChange={(e) => setData('submission_type', e.target.value)}
+                            className="w-full rounded-md border-gray-300 text-sm shadow-sm focus:border-blue-600 focus:ring-blue-600"
+                        >
+                            <option value="multiple">Allow Multiple Submissions</option>
+                            <option value="single">Allow Single Submission Only</option>
+                        </select>
+                        {errors.submission_type && <div className="mt-1 text-sm text-red-600">{errors.submission_type}</div>}
                     </div>
                     <div className="flex justify-end gap-2">
                         <button
