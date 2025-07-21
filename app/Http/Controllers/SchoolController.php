@@ -21,15 +21,22 @@ class SchoolController extends BaseController
 
     public function create(): Response
     {
-        if (Auth::user()->role !== 'principal') {
+        /** @var User $user */
+        $user = Auth::user();
+
+        if ($user->role !== 'principal') {
             abort(403, 'Hanya kepala sekolah yang dapat mengakses halaman ini.');
         }
+
         return Inertia::render('CreateSchool');
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request)
     {
-        if (Auth::user()->role !== 'principal') {
+        /** @var User $principal */
+        $principal = Auth::user();
+
+        if ($principal->role !== 'principal') {
             abort(403, 'Unauthorized action.');
         }
 
@@ -37,34 +44,28 @@ class SchoolController extends BaseController
             'name' => ['required', 'string', 'max:255'],
         ]);
 
-        /** @var \App\Models\User $principal */
-        $principal = Auth::user();
-
-        // Use the relationship to find or create the school
-        // This is cleaner than a separate query
         $school = $principal->school()->updateOrCreate(
-            ['principal_id' => $principal->id], // Conditions to find the school
-            ['name' => $request->name]          // Attributes to update or create with
+            ['principal_id' => $principal->id],
+            ['name' => $request->name]
         );
 
-        // Associate the principal with the school in their own user record if not already set
         if ($principal->school_id !== $school->id) {
             $principal->school_id = $school->id;
             $principal->save();
         }
 
-        return redirect()->route('home')->with('success', 'Sekolah berhasil disimpan.');
+        // Refresh session with updated user
+        Auth::login($principal->fresh());
+
+        // Force full reload so school context updates
+        return Inertia::location(route('home'));
     }
 
-    /**
-     * Add a new teacher to the principal's school.
-     */
-    public function addTeacher(Request $request): RedirectResponse
+    public function addTeacher(Request $request)
     {
-        /** @var \App\Models\User $principal */
+        /** @var User $principal */
         $principal = Auth::user();
 
-        // Authorization: Check role and ensure principal has a school
         if ($principal->role !== 'principal') {
             abort(403, 'Only principals can add teachers.');
         }
@@ -74,7 +75,6 @@ class SchoolController extends BaseController
             return back()->with('error', 'Anda harus memiliki sekolah untuk menambahkan guru.');
         }
 
-        // Validate that the email exists for a teacher who isn't already in a school
         $request->validate([
             'email' => [
                 'required',
@@ -87,28 +87,28 @@ class SchoolController extends BaseController
             'email.exists' => 'Email ini tidak terdaftar sebagai guru atau guru tersebut sudah terdaftar di sekolah lain.',
         ]);
 
-        // Find the teacher. Validation ensures they exist and are eligible.
+        /** @var User|null $teacher */
         $teacher = User::where('email', $request->email)->first();
-        
-        // This check is good for safety, though validation should prevent this.
+
         if (!$teacher) {
             return back()->with('error', 'Guru tidak ditemukan atau sudah terdaftar di sekolah lain.');
         }
 
-        // Update teacher's school_id
         $teacher->school_id = $school->id;
-
-        // The save() method will now work because $teacher is a valid Eloquent model instance.
         $teacher->save();
 
-        return redirect()->route('home')->with('success', 'Guru berhasil ditambahkan ke sekolah Anda.');
+        // Refresh session with up-to-date user
+        Auth::login($principal->fresh());
+        Auth::login($teacher->fresh()); 
+
+        return Inertia::location(route('home'));
     }
-    public function addStudent(Request $request): RedirectResponse
+
+    public function addStudent(Request $request)
     {
-        /** @var \App\Models\User $principal */
+        /** @var User $principal */
         $principal = Auth::user();
 
-        // Authorization: Check role and ensure principal has a school
         if ($principal->role !== 'principal') {
             abort(403, 'Only principals can add students.');
         }
@@ -118,7 +118,6 @@ class SchoolController extends BaseController
             return back()->with('error', 'You must have a school to add a student.');
         }
 
-        // Validate that the email exists for a student who isn't already in a school
         $request->validate([
             'email' => [
                 'required',
@@ -131,37 +130,32 @@ class SchoolController extends BaseController
             'email.exists' => 'This email is not registered as a student or the student is already enrolled in another school.',
         ]);
 
-        // Find the student. Validation ensures they exist and are eligible.
+        /** @var User|null $student */
         $student = User::where('email', $request->email)->first();
-        
-        // This check is good for safety, though validation should prevent this.
+
         if (!$student) {
             return back()->with('error', 'Student not found or already enrolled in another school.');
         }
 
-        // Update student's school_id
         $student->school_id = $school->id;
         $student->save();
 
-        return redirect()->route('add.student.toschool')->with('success', 'Student successfully added to your school.');
+        // Refresh session for principal
+        Auth::login($principal->fresh());
+
+        return Inertia::location(route('add.student.toschool'));
     }
 
-    /**
-     * Display a list of all members in the school.
-     */
     public function showMembers(): Response
     {
-        /** @var \App\Models\User $user */
+        /** @var User $user */
         $user = Auth::user();
-
         $school = $user->school;
 
         if (!$school) {
-            // This will render an error page if the user is not associated with a school.
             return Inertia::render('Error', ['message' => 'You are not associated with any school.']);
         }
 
-        // Fetch all members of the school, ordered by role and then by name.
         $members = $school->members()->orderBy('role', 'desc')->orderBy('name')->get();
 
         return Inertia::render('School/Members', [
