@@ -31,7 +31,7 @@ class SchoolController extends BaseController
         return Inertia::render('CreateSchool');
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         /** @var User $principal */
         $principal = Auth::user();
@@ -61,7 +61,7 @@ class SchoolController extends BaseController
         return Inertia::location(route('home'));
     }
 
-    public function addTeacher(Request $request)
+    public function addTeacher(Request $request): RedirectResponse
     {
         /** @var User $principal */
         $principal = Auth::user();
@@ -88,7 +88,10 @@ class SchoolController extends BaseController
         ]);
 
         /** @var User|null $teacher */
-        $teacher = User::where('email', $request->email)->first();
+        $teacher = User::where('email', $request->email)
+            ->where('role', 'teacher')
+            ->whereNull('school_id')
+            ->first();
 
         if (!$teacher) {
             return back()->with('error', 'Guru tidak ditemukan atau sudah terdaftar di sekolah lain.');
@@ -97,14 +100,13 @@ class SchoolController extends BaseController
         $teacher->school_id = $school->id;
         $teacher->save();
 
-        // Refresh session with up-to-date user
+        // Only refresh the principal's session
         Auth::login($principal->fresh());
-        Auth::login($teacher->fresh()); 
 
-        return Inertia::location(route('home'));
+        return redirect()->route('home')->with('success', 'Guru berhasil ditambahkan ke sekolah.');
     }
 
-    public function addStudent(Request $request)
+    public function addStudent(Request $request): RedirectResponse
     {
         /** @var User $principal */
         $principal = Auth::user();
@@ -131,7 +133,10 @@ class SchoolController extends BaseController
         ]);
 
         /** @var User|null $student */
-        $student = User::where('email', $request->email)->first();
+        $student = User::where('email', $request->email)
+            ->where('role', 'student')
+            ->whereNull('school_id')
+            ->first();
 
         if (!$student) {
             return back()->with('error', 'Student not found or already enrolled in another school.');
@@ -140,10 +145,10 @@ class SchoolController extends BaseController
         $student->school_id = $school->id;
         $student->save();
 
-        // Refresh session for principal
+        // Only refresh the principal's session
         Auth::login($principal->fresh());
 
-        return Inertia::location(route('add.student.toschool'));
+        return redirect()->route('add.student.toschool')->with('success', 'Student successfully added to school.');
     }
 
     public function showMembers(): Response
@@ -162,5 +167,81 @@ class SchoolController extends BaseController
             'school' => $school,
             'members' => $members,
         ]);
+    }
+
+    /**
+     * Show the form for editing the school.
+     */
+    public function edit(): Response
+    {
+        /** @var User $principal */
+        $principal = Auth::user();
+        $school = $principal->school;
+
+        if (!$school) {
+            return Inertia::render('Error', [
+                'message' => 'You do not have a school to edit.',
+                'redirect' => route('home')
+            ]);
+        }
+
+        if ($principal->role !== 'principal' || $principal->id !== $school->principal_id) {
+            abort(403, 'Only the principal can edit this school.');
+        }
+
+        return Inertia::render('School/Edit', [
+            'school' => $school,
+        ]);
+    }
+
+    /**
+     * Update the school's information.
+     */
+    public function update(Request $request): RedirectResponse
+    {
+        /** @var User $principal */
+        $principal = Auth::user();
+        $school = $principal->school;
+
+        if (!$school || $principal->id !== $school->principal_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+        ]);
+
+        $school->update($validated);
+
+        return redirect()->route('school.edit')->with('success', 'School name updated successfully.');
+    }
+
+    /**
+     * Delete the school.
+     */
+    public function destroy(Request $request): RedirectResponse
+    {
+        /** @var User $principal */
+        $principal = Auth::user();
+        $school = $principal->school;
+
+        if (!$school || $principal->id !== $school->principal_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $request->validate([
+            'password' => ['required', 'current_password'],
+        ]);
+
+        // Remove school association from all members before deleting
+        $school->members()->update(['school_id' => null]);
+        
+        $school->delete();
+
+        // Update principal's school_id to null
+        $principal->school_id = null;
+        $principal->save();
+
+        return redirect()->route('home')->with('status', 'Your school has been deleted.');
     }
 }

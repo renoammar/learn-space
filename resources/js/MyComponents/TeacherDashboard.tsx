@@ -87,6 +87,14 @@ const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
                                 <h2 className="mb-1 text-lg font-semibold">Add Student</h2>
                                 <p className="text-sm text-gray-600">Enroll registered students into your school.</p>
                             </Link>
+
+                            <Link
+                                href={route('school.edit')}
+                                className="block rounded-lg border bg-white p-6 transition hover:bg-gray-50 hover:shadow-sm"
+                            >
+                                <h2 className="mb-1 text-lg font-semibold">School Settings</h2>
+                                <p className="text-sm text-gray-600">Edit your school's name or delete the school.</p>
+                            </Link>
                         </>
                     )}
 

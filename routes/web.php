@@ -17,12 +17,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/home', function () {
         /** @var \App\Models\User $user */
         $user = Auth::user();
-        
+
         // Check if user exists (additional safety)
         if (!$user) {
             return redirect()->route('login');
         }
-        
+
         $user->load('school'); // Eager load school for the user
         $school = $user->school;
         $pendingAssignments = [];
@@ -48,7 +48,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->with(['assignment:id,title']) // Eager load only necessary fields
                 ->limit(5)
                 ->get(['id', 'grade', 'assignment_id', 'updated_at']);
-        } 
+        }
         // No need for the teacher/principal specific logic for school, as it's loaded for all users now.
 
         return Inertia::render('home', [
@@ -90,7 +90,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('classrooms.manage');
     Route::post('/classrooms/{class_instance_id}/add-teacher', [ClassroomController::class, 'addTeacher'])
         ->name('classrooms.add-teacher');
-        
+
     // Assignment Routes
     Route::post('/classrooms/{classroom}/assignments', [AssignmentController::class, 'store'])->name('assignments.store');
     Route::get('/assignments/{assignment}', [AssignmentController::class, 'show'])->name('assignments.show');
@@ -99,7 +99,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Student Enrollment Routes
     Route::post('/classrooms/{classroom}/enroll-student', [ClassroomController::class, 'enrollStudent'])->name('classrooms.enrollStudent');
     Route::delete('/classrooms/{classroom}/remove-student/{student}', [ClassroomController::class, 'removeStudent'])->name('classrooms.removeStudent');
-    
+
     // --- FIX: ADD THE MISSING SCHOOL MEMBERS ROUTE ---
     Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
 
@@ -114,6 +114,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Schedule Routes
     Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule.index');
     Route::post('/schedule', [ScheduleController::class, 'store'])->name('schedule.store');
+
+    // School Settings Routes (for principals)
+    Route::middleware('role:principal')->group(function () {
+        Route::get('/school/edit', [SchoolController::class, 'edit'])->name('school.edit');
+        Route::put('/school/update', [SchoolController::class, 'update'])->name('school.update');
+        Route::delete('/school/destroy', [SchoolController::class, 'destroy'])->name('school.destroy');
+    });
 });
 
 require __DIR__.'/settings.php';
