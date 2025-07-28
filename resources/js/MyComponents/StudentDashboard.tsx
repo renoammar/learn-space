@@ -1,5 +1,5 @@
 import { Link } from '@inertiajs/react';
-import { BookCheck, FileClock, School } from 'lucide-react';
+import { BookCheck, Calendar, FileClock, School } from 'lucide-react';
 import { FC } from 'react';
 
 // Define types based on what the backend will send
@@ -19,6 +19,13 @@ interface GradedSubmission {
     };
 }
 
+interface ScheduleEvent {
+    id: number;
+    title: string;
+    start_date: string;
+    type: string;
+}
+
 // Add school to props
 interface StudentSchool {
     id: number;
@@ -30,6 +37,7 @@ interface StudentDashboardProps {
     school: StudentSchool | null; // School can be null
     pendingAssignments: Assignment[];
     gradedAssignments: GradedSubmission[];
+    upcomingEvents: ScheduleEvent[];
 }
 
 const formatDate = (dateString: string | null): string => {
@@ -41,7 +49,13 @@ const formatDate = (dateString: string | null): string => {
     });
 };
 
-const StudentDashboard: FC<StudentDashboardProps> = ({ studentName, school, pendingAssignments = [], gradedAssignments = [] }) => {
+const StudentDashboard: FC<StudentDashboardProps> = ({
+    studentName,
+    school,
+    pendingAssignments = [],
+    gradedAssignments = [],
+    upcomingEvents = [],
+}) => {
     // Conditional rendering based on whether the student has a school
     if (!school) {
         return (
@@ -117,6 +131,30 @@ const StudentDashboard: FC<StudentDashboardProps> = ({ studentName, school, pend
                             <p className="text-sm text-gray-500">No recently graded assignments.</p>
                         )}
                     </div>
+                </div>
+            </section>
+
+            {/* Schedule Section */}
+            <section>
+                <div className="rounded-2xl bg-white p-6 shadow-md">
+                    <div className="mb-4 flex items-center gap-3">
+                        <Calendar className="h-6 w-6 text-indigo-500" />
+                        <h3 className="text-xl font-semibold">Upcoming Schedule</h3>
+                    </div>
+                    {upcomingEvents.length > 0 ? (
+                        <ul className="space-y-3">
+                            {upcomingEvents.map((event) => (
+                                <li key={event.id} className="rounded-lg bg-gray-50 p-4 transition hover:bg-gray-100">
+                                    <Link href={route('schedule.index')} className="block">
+                                        <p className="font-semibold text-blue-700">{event.title}</p>
+                                        <p className="text-sm text-gray-500">Starts: {formatDate(event.start_date)}</p>
+                                    </Link>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-sm text-gray-500">You have no upcoming events on your schedule.</p>
+                    )}
                 </div>
             </section>
         </div>

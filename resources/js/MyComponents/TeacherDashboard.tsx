@@ -3,17 +3,11 @@
 import { Link } from '@inertiajs/react';
 import { School as SchoolIcon } from 'lucide-react'; // Renamed to avoid conflict with the type
 import React from 'react';
+import { User } from './type';
 
 interface School {
     id: number;
     name: string;
-}
-
-interface User {
-    id: number;
-    email: string;
-    name: string;
-    role: 'principal' | 'teacher'; // Be specific about roles this component handles
 }
 
 interface Props {

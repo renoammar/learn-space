@@ -27,6 +27,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         $school = $user->school;
         $pendingAssignments = [];
         $gradedAssignments = [];
+        $upcomingEvents = []; // Initialize upcomingEvents
 
         if ($user->role === 'student' && $school) { // Only fetch assignments if student is in a school
             // Get classroom IDs - use the collection directly, not the query builder
@@ -48,6 +49,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
                 ->with(['assignment:id,title']) // Eager load only necessary fields
                 ->limit(5)
                 ->get(['id', 'grade', 'assignment_id', 'updated_at']);
+
+            // Fetch upcoming schedule events
+            $upcomingEvents = \App\Models\ScheduleEvent::where('school_id', $school->id)
+                ->where(function ($query) use ($classroomIds) {
+                    $query->whereNull('classroom_id') // School-wide events
+                          ->orWhereIn('classroom_id', $classroomIds); // Classroom-specific events
+                })
+                ->where('start_date', '>=', now()) // Only future events
+                ->orderBy('start_date', 'asc')
+                ->limit(5)
+                ->get();
         }
         // No need for the teacher/principal specific logic for school, as it's loaded for all users now.
 
@@ -55,6 +67,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
             'school' => $school,
             'pendingAssignments' => $pendingAssignments,
             'gradedAssignments' => $gradedAssignments,
+            'upcomingEvents' => $upcomingEvents,
         ]);
     })->name('home');
 
