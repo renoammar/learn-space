@@ -7,12 +7,13 @@ use Illuminate\Http\Request;
 
 class RoleMiddleware
 {
-    public function handle(Request $request, Closure $next, string $role)
-    {
-        if ($request->user()->role !== $role) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        return $next($request);
+    public function handle(Request $request, Closure $next, ...$roles)
+{
+    if (!in_array($request->user()->role, $roles)) {
+        abort(403, 'Unauthorized action.');
     }
+
+    return $next($request);
+}
+
 }

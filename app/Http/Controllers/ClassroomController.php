@@ -55,6 +55,9 @@ class ClassroomController extends Controller
     public function enrollStudent(Request $request, Classroom $classroom)
 {
     $user = Auth::user();
+    if (!in_array($user->role, ['teacher', 'principal', 'school_manager'])) {
+        abort(403);
+    }
     if ($user->role !== 'teacher' && $user->role !== 'principal') {
         abort(403);
     }
@@ -84,6 +87,9 @@ class ClassroomController extends Controller
 public function removeStudent(Request $request, Classroom $classroom, User $student)
 {
     $user = Auth::user();
+    if (!in_array($user->role, ['teacher', 'principal','school_manager'])) {
+        abort(403);
+    }
     if ($user->role !== 'teacher' && $user->role !== 'principal') {
         abort(403);
     }
@@ -124,11 +130,13 @@ public function addTeacher(Request $request, Classroom $class_instance_id)
 
     /** @var \App\Models\User $currentUser */
     $currentUser = Auth::user();
-
-    // Authorization: Ensure the current user is a principal of the same school as the classroom
-    if ($currentUser->role !== 'principal') {
-        return back()->with('error_message', 'Only principals can add teachers.');
+    if (!in_array($currentUser->role, ['principal', 'school_manager'])) {
+        return back()->with('error_message', 'Only principals or school managers can add teachers.');
     }
+    // Authorization: Ensure the current user is a principal of the same school as the classroom
+    // if ($currentUser->role !== 'principal') {
+    //     return back()->with('error_message', 'Only principals can add teachers.');
+    // }
     
     // Eager load the school relationship for the current user to get their school_id
     $principalSchoolId = $currentUser->school()->value('id');

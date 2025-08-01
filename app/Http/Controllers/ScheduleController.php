@@ -91,9 +91,13 @@ class ScheduleController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        if ($user->role !== 'teacher' && $user->role !== 'principal') {
-            abort(403, 'Unauthorized action.');
-        }
+        // if ($user->role !== 'teacher' && $user->role !== 'principal') {
+        //     abort(403, 'Unauthorized action.');
+        // }
+        // $user = Auth::user();
+        if (!in_array($user->role, ['teacher', 'principal', 'school_manager'])) {
+        abort(403, 'Unauthorized action.');
+    }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',
@@ -108,9 +112,19 @@ class ScheduleController extends Controller
         // When creating a classroom-specific event, verify the teacher is assigned to that classroom.
         // Instead of a relationship query `classrooms()->where(...)`, we use the collection method `contains()`
         // on the `classrooms` property (assuming it's an accessor that returns a collection).
-        if ($validated['scope'] === 'classroom' && !$user->classrooms->contains('id', $validated['classroom_id'])) {
-            abort(403, 'You are not authorized to create an event for this classroom.');
+        // if ($validated['scope'] === 'classroom' && !$user->classrooms->contains('id', $validated['classroom_id'])) {
+        //     abort(403, 'You are not authorized to create an event for this classroom.');
+        // }
+        if ($validated['scope'] === 'classroom') {
+            if (in_array($user->role, ['teacher', 'principal'])) {
+                if (!$user->classrooms->contains('id', $validated['classroom_id'])) {
+                    abort(403, 'You are not authorized to create an event for this classroom.');
+                }
+            } elseif ($user->role !== 'school_manager') {
+                abort(403, 'Unauthorized action.');
+            }
         }
+
 
         ScheduleEvent::create([
             'title' => $validated['title'],

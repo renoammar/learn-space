@@ -63,14 +63,14 @@ class SchoolController extends BaseController
 
     public function addTeacher(Request $request): RedirectResponse
     {
-        /** @var User $principal */
-        $principal = Auth::user();
+        /** @var User $user */
+        $user = Auth::user();
 
-        if ($principal->role !== 'principal') {
-            abort(403, 'Only principals can add teachers.');
+        if (!in_array($user->role, ['principal', 'school_manager'])) {
+            abort(403, 'Only principals and school managers can add teachers.');
         }
 
-        $school = $principal->school;
+        $school = $user->school;
         if (!$school) {
             return back()->with('error', 'Anda harus memiliki sekolah untuk menambahkan guru.');
         }
@@ -100,22 +100,21 @@ class SchoolController extends BaseController
         $teacher->school_id = $school->id;
         $teacher->save();
 
-        // Only refresh the principal's session
-        Auth::login($principal->fresh());
+        Auth::login($user->fresh());
 
         return redirect()->route('home')->with('success', 'Guru berhasil ditambahkan ke sekolah.');
     }
 
     public function addStudent(Request $request): RedirectResponse
     {
-        /** @var User $principal */
-        $principal = Auth::user();
+        /** @var User $user */
+        $user = Auth::user();
 
-        if ($principal->role !== 'principal') {
-            abort(403, 'Only principals can add students.');
+        if (!in_array($user->role, ['principal', 'school_manager'])) {
+            abort(403, 'Only principals and school managers can add students.');
         }
 
-        $school = $principal->school;
+        $school = $user->school;
         if (!$school) {
             return back()->with('error', 'You must have a school to add a student.');
         }
@@ -145,8 +144,7 @@ class SchoolController extends BaseController
         $student->school_id = $school->id;
         $student->save();
 
-        // Only refresh the principal's session
-        Auth::login($principal->fresh());
+        Auth::login($user->fresh());
 
         return redirect()->route('add.student.toschool')->with('success', 'Student successfully added to school.');
     }
@@ -163,10 +161,13 @@ class SchoolController extends BaseController
 
         $members = $school->members()->orderBy('role', 'desc')->orderBy('name')->get();
 
-        return Inertia::render('School/Members', [
-            'school' => $school,
-            'members' => $members,
-        ]);
+      return Inertia::render('School/Members', [
+        'school' => $school,
+        'members' => $members,
+        'auth' => [
+            'user' => $user,
+        ],
+]);
     }
 
     /**
@@ -243,5 +244,39 @@ class SchoolController extends BaseController
         $principal->save();
 
         return redirect()->route('home')->with('status', 'Your school has been deleted.');
+    }
+
+    /**
+     * Promote or demote a teacher to/from school manager.
+     */
+    public function toggleManagerStatus(Request $request, User $member): RedirectResponse
+    {
+        /** @var User $principal */
+        $principal = Auth::user();
+
+        // Authorization: Only the principal of the school can perform this action.
+        if ($principal->role !== 'principal' || $principal->school_id !== $member->school_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Ensure the target is a teacher or a school manager (but not a student).
+        if (!in_array($member->role, ['teacher', 'school_manager'])) {
+            return back()->with('error_message', 'Only teachers can be promoted to school managers.');
+        }
+        
+        // Ensure principal cannot change their own role.
+        if($principal->id === $member->id) {
+            return back()->with('error_message', 'You cannot change your own role.');
+        }
+
+        // Toggle the role
+        $member->role = $member->role === 'teacher' ? 'school_manager' : 'teacher';
+        $member->save();
+
+        $message = $member->role === 'school_manager'
+            ? $member->name . ' has been promoted to School Manager.'
+            : $member->name . ' has been demoted to Teacher.';
+
+        return redirect()->route('school.members')->with('success_message', $message);
     }
 }

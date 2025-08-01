@@ -49,6 +49,7 @@ const SchedulePage: React.FC & { layout?: (page: React.ReactNode) => React.React
     const { props } = usePage<PageProps>();
     const { events, classrooms, isTeacherOrPrincipal, flash } = props;
     const [showCreateModal, setShowCreateModal] = useState(false);
+    const canCreateEvents = isTeacherOrPrincipal || props.auth.user.role === 'school_manager';
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleString([], {
@@ -95,7 +96,7 @@ const SchedulePage: React.FC & { layout?: (page: React.ReactNode) => React.React
                         <h1 className="text-3xl font-bold text-gray-900">School Schedule</h1>
                         <p className="mt-1 text-sm text-gray-500">Upcoming events, exams, deadlines, and holidays.</p>
                     </div>
-                    {isTeacherOrPrincipal && (
+                    {canCreateEvents && (
                         <button onClick={() => setShowCreateModal(true)} className="btn-primary inline-flex items-center gap-2">
                             <PlusCircle size={18} />
                             Create Event

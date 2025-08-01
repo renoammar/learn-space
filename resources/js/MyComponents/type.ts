@@ -4,7 +4,7 @@ export interface User {
     id: number;
     name: string;
     email: string;
-    role: 'principal' | 'teacher' | 'student';
+    role: 'principal' | 'teacher' | 'student' | 'school_manager';
 }
 
 export interface School {

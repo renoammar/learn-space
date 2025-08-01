@@ -4,7 +4,6 @@ use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\ClassroomController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\ScheduleController; // Import the new controller
-use App\Models\School;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -77,17 +76,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::post('/schools/add-teacher', [SchoolController::class, 'addTeacher'])
         ->name('schools.addTeacher')
-        ->middleware('role:principal');
+        ->middleware('role:principal,school_manager'); // UPDATED: Allow school_manager
 
-    // START OF FIX
     Route::get('/add-student-toschool', function () {
         return Inertia::render('addStudentToSchool');
     })->name('add.student.toschool');
 
     Route::post('/schools/add-student', [SchoolController::class, 'addStudent'])
         ->name('schools.addStudent')
-        ->middleware('role:principal');
-    // END OF FIX
+        ->middleware('role:principal,school_manager'); // UPDATED: Allow school_manager
 
     Route::get('/schools/create', [SchoolController::class, 'create'])
         ->name('schools.create')
@@ -113,7 +110,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/classrooms/{classroom}/enroll-student', [ClassroomController::class, 'enrollStudent'])->name('classrooms.enrollStudent');
     Route::delete('/classrooms/{classroom}/remove-student/{student}', [ClassroomController::class, 'removeStudent'])->name('classrooms.removeStudent');
 
-    // --- FIX: ADD THE MISSING SCHOOL MEMBERS ROUTE ---
     Route::get('/school/members', [SchoolController::class, 'showMembers'])->name('school.members');
 
     // New Grading Route
@@ -127,6 +123,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Schedule Routes
     Route::get('/schedule', [ScheduleController::class, 'index'])->name('schedule.index');
     Route::post('/schedule', [ScheduleController::class, 'store'])->name('schedule.store');
+
+    // Toggle Manager Status Route
+    Route::post('/school/members/{member}/toggle-manager', [SchoolController::class, 'toggleManagerStatus'])
+        ->name('school.members.toggleManager')
+        ->middleware('role:principal');
 
     // School Settings Routes (for principals)
     Route::middleware('role:principal')->group(function () {

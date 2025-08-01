@@ -37,7 +37,7 @@ const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
             );
         }
 
-        // If the user is a 'teacher', show a message to wait for an invitation.
+        // If the user is a 'teacher' or 'school_manager', show a message to wait for an invitation.
         return (
             <div className="flex min-h-[60vh] flex-col items-center justify-center space-y-4 p-8 text-center">
                 <SchoolIcon className="h-16 w-16 text-gray-400" />
@@ -52,19 +52,22 @@ const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
     }
 
     // ---- 2. Render the dashboard for a user who IS associated with a school ----
+    const isPrincipalOrManager = user.role === 'principal' || user.role === 'school_manager';
+
     return (
         <div className="bg-gray-50 p-6">
             <div className="mx-auto max-w-4xl">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
                     <p className="mt-1 text-gray-600">
-                        Welcome back, {user.name}. You are logged in as a {user.role} for <span className="font-semibold">{school.name}</span>.
+                        Welcome back, {user.name}. You are logged in as a {user.role.replace('_', ' ')} for{' '}
+                        <span className="font-semibold">{school.name}</span>.
                     </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                    {/* Principal-specific actions */}
-                    {user.role === 'principal' && (
+                    {/* Principal and School Manager actions */}
+                    {isPrincipalOrManager && (
                         <>
                             <Link
                                 href={route('add.teacher.toschool')}
@@ -81,18 +84,21 @@ const TeacherDashboard: React.FC<Props> = ({ user, school }) => {
                                 <h2 className="mb-1 text-lg font-semibold">Add Student</h2>
                                 <p className="text-sm text-gray-600">Enroll registered students into your school.</p>
                             </Link>
-
-                            <Link
-                                href={route('school.edit')}
-                                className="block rounded-lg border bg-white p-6 transition hover:bg-gray-50 hover:shadow-sm"
-                            >
-                                <h2 className="mb-1 text-lg font-semibold">School Settings</h2>
-                                <p className="text-sm text-gray-600">Edit your school's name or delete the school.</p>
-                            </Link>
                         </>
                     )}
 
-                    {/* Actions for both Teachers and Principals */}
+                    {/* Principal-only actions */}
+                    {user.role === 'principal' && (
+                        <Link
+                            href={route('school.edit')}
+                            className="block rounded-lg border bg-white p-6 transition hover:bg-gray-50 hover:shadow-sm"
+                        >
+                            <h2 className="mb-1 text-lg font-semibold">School Settings</h2>
+                            <p className="text-sm text-gray-600">Edit your school's name or delete the school.</p>
+                        </Link>
+                    )}
+
+                    {/* Actions for all Teachers, Managers, and Principals */}
                     <Link
                         href={route('students.classes')}
                         className="block rounded-lg border bg-white p-6 transition hover:bg-gray-50 hover:shadow-sm"
